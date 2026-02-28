@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   publish:
@@ -17,7 +18,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Setup pnpm
@@ -25,6 +26,7 @@ jobs:
           corepack enable
           corepack prepare pnpm@10.29.2 --activate
           pnpm -v
+          npm -v
 
       - name: Validate tag matches versions
         run: |
@@ -47,12 +49,12 @@ jobs:
           pnpm -C apps/cli pack --pack-destination release-assets
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          pnpm -C packages/core publish --no-git-checks
-          pnpm -C packages/plugin-example publish --no-git-checks
-          pnpm -C apps/cli publish --no-git-checks
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          npm publish "release-assets/earno-core-${VERSION}.tgz" --access public
+          npm publish "release-assets/earno-plugin-example-${VERSION}.tgz" --access public
+          npm publish "release-assets/earno-${VERSION}.tgz" --access public
 
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
