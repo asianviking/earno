@@ -1,0 +1,62 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.29.2 --activate
+          pnpm -v
+          npm -v
+
+      - name: Validate tag matches versions
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          node -e "const expected=process.argv[1]; const pkgs=['./apps/cli/package.json','./packages/core/package.json','./packages/plugin-example/package.json']; const versions=pkgs.map((p)=>({p, v: require(p).version})); const mismatch=versions.filter((x)=>x.v!==expected); if(mismatch.length){console.error('Release tag does not match package versions. Expected:', expected); for(const m of mismatch) console.error(m.p+':', m.v); process.exit(1)}" "$VERSION"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter earno build
+
+      - name: Pack release assets
+        run: |
+          rm -rf release-assets
+          mkdir -p release-assets
+          pnpm -C packages/core pack --pack-destination release-assets
+          pnpm -C packages/plugin-example pack --pack-destination release-assets
+          pnpm -C apps/cli pack --pack-destination release-assets
+
+      - name: Publish
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          npm publish "release-assets/earno-core-${VERSION}.tgz" --access public
+          npm publish "release-assets/earno-plugin-example-${VERSION}.tgz" --access public
+          npm publish "release-assets/earno-${VERSION}.tgz" --access public
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*.tgz

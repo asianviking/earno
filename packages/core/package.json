@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Shared core types + request transport for earno",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asianviking/earno.git"
+  },
+  "homepage": "https://github.com/asianviking/earno#readme",
+  "bugs": {
+    "url": "https://github.com/asianviking/earno/issues"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -25,6 +33,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w"
@@ -36,4 +47,3 @@
     "typescript": "^5.9.3"
   }
 }
-
