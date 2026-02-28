@@ -26,6 +26,18 @@ After either method, `earno` is available everywhere:
 earno --help
 ```
 
+## Plugins
+
+earno supports strategy plugins as nested command groups (e.g. `earno bend deposit ...`).
+
+```sh
+# Add a plugin spec to your local config (does not install it)
+earno plugin add @ayvee/bend
+
+# Or load plugins ad-hoc for a single run
+EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress --web
+```
+
 ### Deposit BERA into sWBERA
 
 ```sh
