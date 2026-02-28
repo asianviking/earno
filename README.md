@@ -65,6 +65,12 @@ earno deposit 1.5 --receiver 0xYourAddress --web
 
 Open the returned `executorUrl` (or legacy `portoLink`), pick a wallet (Porto or injected), and execute.
 
+To close the loop and have the browser send the tx hash back to your terminal:
+
+```sh
+earno deposit 1.5 --receiver 0xYourAddress --web --wait
+```
+
 ### Deploy the web executor (Vercel)
 
 1. Import the repo in Vercel and set **Root Directory** to `apps/web`.
