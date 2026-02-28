@@ -11,7 +11,7 @@ importers:
   apps/cli:
     dependencies:
       '@earno/core':
-        specifier: workspace:^
+        specifier: ^0.1.1
         version: link:../../packages/core
       incur:
         specifier: ^0.1.7
@@ -21,7 +21,7 @@ importers:
         version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       '@earno/plugin-example':
-        specifier: workspace:^
+        specifier: ^0.1.1
         version: link:../../packages/plugin-example
       '@types/node':
         specifier: ^25.3.2
@@ -116,7 +116,7 @@ importers:
   packages/plugin-example:
     dependencies:
       '@earno/core':
-        specifier: workspace:^
+        specifier: ^0.1.1
         version: link:../core
       incur:
         specifier: ^0.1.7
