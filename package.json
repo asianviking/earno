@@ -30,6 +30,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.29.2",
   "dependencies": {
+    "fflate": "^0.8.2",
     "incur": "^0.1.7",
     "viem": "^2.46.3"
   },

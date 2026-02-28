@@ -1,8 +1,9 @@
 import { type Abi } from 'viem'
+import { BERACHAIN_MAINNET } from './shared/chains.js'
 
 export const BERACHAIN = {
-  id: 80094,
-  rpc: 'https://rpc.berachain.com/',
+  id: BERACHAIN_MAINNET.id,
+  rpc: BERACHAIN_MAINNET.rpcUrls[0],
 } as const
 
 export const WBERA = {
