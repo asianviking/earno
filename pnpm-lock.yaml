@@ -20,6 +20,9 @@ importers:
         specifier: ^2.46.3
         version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
+      '@earno/plugin-example':
+        specifier: workspace:^
+        version: link:../../packages/plugin-example
       '@types/node':
         specifier: ^25.3.2
         version: 25.3.2
@@ -105,6 +108,22 @@ importers:
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/plugin-example:
+    dependencies:
+      '@earno/core':
+        specifier: workspace:^
+        version: link:../core
+      incur:
+        specifier: ^0.1.7
+        version: 0.1.7
+      viem:
+        specifier: ^2.46.3
+        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       typescript:
         specifier: ^5.9.3
