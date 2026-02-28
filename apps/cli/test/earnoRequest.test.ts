@@ -4,7 +4,7 @@ import {
   decodeEarnoWebRequest,
   encodeEarnoWebRequest,
   type EarnoWebRequestV1,
-} from '../src/shared/earnoRequest.js'
+} from '@earno/core/earnoRequest'
 
 describe('earno web request', () => {
   const req: EarnoWebRequestV1 = {
@@ -38,4 +38,3 @@ describe('earno web request', () => {
     expect(url).toMatch(/#r=/)
   })
 })
-

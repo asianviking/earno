@@ -2,7 +2,7 @@ import { Porto } from 'porto'
 import { formatEther, http } from 'viem'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EarnoWebRequestV1 } from './earnoRequest'
-import { EARNO_DEFAULT_CHAIN, findEarnoChainById } from '@earno/shared/chains'
+import { EARNO_DEFAULT_CHAIN, findEarnoChainById } from '@earno/core/chains'
 
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown }) => Promise<unknown>

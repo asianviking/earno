@@ -2,11 +2,10 @@ export type {
   EarnoWebCall,
   EarnoWebRequestV1,
   EarnoWebUrlMode,
-} from './shared/earnoRequest.js'
+} from '@earno/core/earnoRequest'
 
 export {
   encodeEarnoWebRequest,
   decodeEarnoWebRequest,
   buildEarnoWebUrl,
-} from './shared/earnoRequest.js'
-
+} from '@earno/core/earnoRequest'

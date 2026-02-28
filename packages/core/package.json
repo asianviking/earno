@@ -1,0 +1,39 @@
+{
+  "name": "@earno/core",
+  "version": "0.1.0",
+  "description": "Shared core types + request transport for earno",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./earnoRequest": {
+      "types": "./dist/earnoRequest.d.ts",
+      "import": "./dist/earnoRequest.js",
+      "default": "./dist/earnoRequest.js"
+    },
+    "./chains": {
+      "types": "./dist/chains.d.ts",
+      "import": "./dist/chains.js",
+      "default": "./dist/chains.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
+

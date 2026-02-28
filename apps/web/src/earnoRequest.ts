@@ -1,5 +1,5 @@
-export type { EarnoWebRequestV1 } from '@earno/shared/earnoRequest'
-export { decodeEarnoWebRequest } from '@earno/shared/earnoRequest'
+export type { EarnoWebRequestV1 } from '@earno/core/earnoRequest'
+export { decodeEarnoWebRequest } from '@earno/core/earnoRequest'
 
 export function readRequestFromLocation(): string | null {
   const url = new URL(window.location.href)
