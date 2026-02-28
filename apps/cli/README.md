@@ -7,7 +7,7 @@ Repo: `asianviking/earno`
 ## Install
 
 ```sh
-npm i -g earno
+npm i -g @earno/cli
 ```
 
 ## Usage

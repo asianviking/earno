@@ -12,14 +12,14 @@ Built with [incur](https://github.com/wevm/incur) + [viem](https://github.com/we
 
 ```sh
 # Install globally
-npm i -g earno
+npm i -g @earno/cli
 
 # Or clone and link
 git clone https://github.com/asianviking/earno.git
 cd earno
 pnpm install
 pnpm build
-pnpm --filter earno link --global
+pnpm --filter @earno/cli link --global
 ```
 
 After either method, `earno` is available everywhere:

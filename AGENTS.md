@@ -15,8 +15,8 @@ pnpm build
 pnpm test
 
 pnpm dev:web        # run executor UI
-pnpm --filter earno dev
-pnpm --filter earno test
+pnpm --filter @earno/cli dev
+pnpm --filter @earno/cli test
 ```
 
 ## Conventions
