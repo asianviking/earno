@@ -11,11 +11,14 @@
   ],
   "scripts": {
     "dev": "node --import tsx src/cli.ts",
+    "dev:web": "pnpm --filter bearn-web dev",
     "build": "tsc",
+    "build:web": "pnpm --filter bearn-web build",
     "prepack": "npm run build",
     "bearn": "node --import tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "preview:web": "pnpm --filter bearn-web preview"
   },
   "keywords": [
     "berachain",
