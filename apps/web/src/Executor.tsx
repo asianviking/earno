@@ -1,7 +1,7 @@
 import { Porto } from 'porto'
 import { formatEther, http } from 'viem'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { BearnWebRequestV1 } from './bearnRequest'
+import type { EarnoWebRequestV1 } from './earnoRequest'
 
 type CallsStatus = {
   status: number
@@ -31,7 +31,7 @@ function statusLabel(code: number): string {
   return `Unknown (${code})`
 }
 
-export function Executor({ request }: { request: BearnWebRequestV1 }) {
+export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const [account, setAccount] = useState<`0x${string}` | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [sending, setSending] = useState(false)

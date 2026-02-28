@@ -1,20 +1,20 @@
 import { useMemo } from 'react'
 import {
-  decodeBearnWebRequest,
+  decodeEarnoWebRequest,
   readRequestFromLocation,
-  type BearnWebRequestV1,
-} from './bearnRequest'
+  type EarnoWebRequestV1,
+} from './earnoRequest'
 import { Executor } from './Executor'
 
 function App() {
   const encoded = readRequestFromLocation()
   const decoded = useMemo<{
-    request: BearnWebRequestV1 | null
+    request: EarnoWebRequestV1 | null
     error: string | null
   }>(() => {
     if (!encoded) return { request: null, error: null }
     try {
-      return { request: decodeBearnWebRequest(encoded), error: null }
+      return { request: decodeEarnoWebRequest(encoded), error: null }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Invalid request'
       return { request: null, error: message }
@@ -25,9 +25,9 @@ function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-10">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">bearn</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">earno</h1>
           <p className="text-sm text-zinc-400">
-            Browser executor for bearn intents (Porto signing + batched calls).
+            Browser executor for earno intents (Porto signing + batched calls).
           </p>
         </header>
 
@@ -53,7 +53,7 @@ function App() {
               and open the returned <code className="text-zinc-200">portoLink</code>.
             </div>
             <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">
-              bearn deposit 1.0 --receiver 0xYourAddress --porto
+              earno deposit 1.0 --receiver 0xYourAddress --porto
             </pre>
           </section>
         )}
