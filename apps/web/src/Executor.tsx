@@ -312,6 +312,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
       }
 
       const hashes: `0x${string}`[] = []
+      const publicClient = createPublicClient({ transport: http(rpcUrl) })
       for (const call of calls) {
         const hash = (await provider.request({
           method: 'eth_sendTransaction',
@@ -325,8 +326,10 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
           ],
         })) as `0x${string}`
         hashes.push(hash)
+        setTxHashes([...hashes])
+        const receipt = await publicClient.waitForTransactionReceipt({ hash })
+        if (receipt.status === 'reverted') throw new Error(`Transaction reverted: ${hash}`)
       }
-      setTxHashes(hashes)
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to send'
       setError(message)
@@ -394,8 +397,9 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
         : null)
 
     if (!hashes || hashes.length === 0) return
+    if (txHashes && txHashes.length < request.calls.length) return
 
-    const primary = hashes[0]
+    const primary = hashes[hashes.length - 1]!
     const url = buildCallbackUrl(request.callback.url, {
       state: request.callback.state,
       txHash: primary,
@@ -590,7 +594,8 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
               ))}
             </div>
             <div className="mt-3 text-xs text-zinc-500">
-              Simulation uses <span className="font-mono">{rpcUrl}</span> and may differ from final execution.
+              Simulation uses <span className="font-mono">{rpcUrl}</span>. Calls are simulated independently, so later
+              steps may fail if they depend on earlier steps.
             </div>
           </div>
         ) : null}
