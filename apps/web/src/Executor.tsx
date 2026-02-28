@@ -2,6 +2,11 @@ import { Porto } from 'porto'
 import { formatEther, http } from 'viem'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EarnoWebRequestV1 } from './earnoRequest'
+import { EARNO_DEFAULT_CHAIN, findEarnoChainById } from '@earno/shared/chains'
+
+type Eip1193Provider = {
+  request: (args: { method: string; params?: unknown }) => Promise<unknown>
+}
 
 type CallsStatus = {
   status: number
@@ -31,6 +36,47 @@ function statusLabel(code: number): string {
   return `Unknown (${code})`
 }
 
+async function ensureWalletOnChain(args: {
+  provider: Eip1193Provider
+  chainIdHex: `0x${string}`
+  chainName: string
+  rpcUrl?: string
+  nativeCurrencySymbol?: string
+}) {
+  const { provider, chainIdHex, chainName, rpcUrl, nativeCurrencySymbol } = args
+
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: chainIdHex }],
+    })
+  } catch (e) {
+    const code = (e as { code?: number } | undefined)?.code
+    if (code !== 4902) return
+    if (!rpcUrl) return
+
+    try {
+      await provider.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: chainIdHex,
+            chainName,
+            nativeCurrency: {
+              name: nativeCurrencySymbol ?? chainName,
+              symbol: nativeCurrencySymbol ?? 'ETH',
+              decimals: 18,
+            },
+            rpcUrls: [rpcUrl],
+          },
+        ],
+      })
+    } catch {
+      // Ignore; some wallets block programmatic adds.
+    }
+  }
+}
+
 export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const [account, setAccount] = useState<`0x${string}` | null>(null)
   const [connecting, setConnecting] = useState(false)
@@ -40,16 +86,21 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const [txHashes, setTxHashes] = useState<`0x${string}`[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const rpcUrl = request.rpcUrl ?? 'https://rpc.berachain.com/'
+  const [walletId, setWalletId] = useState<'porto' | 'injected'>('porto')
+
+  const chain = useMemo(() => findEarnoChainById(request.chainId), [request.chainId])
+  const rpcUrl = request.rpcUrl ?? chain?.rpcUrls[0] ?? EARNO_DEFAULT_CHAIN.rpcUrls[0]
   const chainIdHex = useMemo(() => chainIdToHex(request.chainId), [request.chainId])
+  const chainName = chain?.name ?? `Chain ${request.chainId}`
+  const nativeCurrencySymbol = chain?.nativeCurrency.symbol ?? 'ETH'
 
   const porto = useMemo(() => {
     return Porto.create({
       chains: [
         {
           id: request.chainId,
-          name: 'Berachain',
-          nativeCurrency: { name: 'BERA', symbol: 'BERA', decimals: 18 },
+          name: chainName,
+          nativeCurrency: { name: nativeCurrencySymbol, symbol: nativeCurrencySymbol, decimals: 18 },
           rpcUrls: { default: { http: [rpcUrl] } },
         },
       ],
@@ -57,7 +108,19 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
         [request.chainId]: http(rpcUrl),
       },
     })
-  }, [request.chainId, rpcUrl])
+  }, [chainName, nativeCurrencySymbol, request.chainId, rpcUrl])
+
+  const injectedProvider = useMemo<Eip1193Provider | null>(() => {
+    const eth = (globalThis as unknown as { ethereum?: unknown }).ethereum
+    if (!eth || typeof eth !== 'object') return null
+    const p = eth as Partial<Eip1193Provider>
+    if (typeof p.request !== 'function') return null
+    return p as Eip1193Provider
+  }, [])
+
+  const provider = useMemo<Eip1193Provider>(() => {
+    return walletId === 'injected' && injectedProvider ? injectedProvider : (porto.provider as Eip1193Provider)
+  }, [injectedProvider, porto.provider, walletId])
 
   const senderMismatch =
     request.sender && account ? request.sender.toLowerCase() !== account.toLowerCase() : false
@@ -66,7 +129,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     setError(null)
     setConnecting(true)
     try {
-      const accounts = (await porto.provider.request({
+      const accounts = (await provider.request({
         method: 'eth_requestAccounts',
       })) as string[]
       const first = accounts[0]
@@ -78,7 +141,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     } finally {
       setConnecting(false)
     }
-  }, [porto])
+  }, [provider])
 
   const sendCalls = useCallback(async () => {
     setError(null)
@@ -87,9 +150,17 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     setBundleId(null)
     setTxHashes(null)
     try {
+      await ensureWalletOnChain({
+        provider,
+        chainIdHex,
+        chainName,
+        rpcUrl,
+        nativeCurrencySymbol,
+      })
+
       const activeAccount =
         account ??
-        (((await porto.provider.request({
+        (((await provider.request({
           method: 'eth_accounts',
         })) as string[])[0] as `0x${string}` | undefined)
 
@@ -112,7 +183,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
       }))
 
       try {
-        const result = (await porto.provider.request({
+        const result = (await provider.request({
           method: 'wallet_sendCalls',
           params: [
             {
@@ -135,7 +206,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
 
       const hashes: `0x${string}`[] = []
       for (const call of calls) {
-        const hash = (await porto.provider.request({
+        const hash = (await provider.request({
           method: 'eth_sendTransaction',
           params: [
             {
@@ -155,7 +226,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     } finally {
       setSending(false)
     }
-  }, [account, chainIdHex, connect, porto, request.calls, request.sender])
+  }, [account, chainIdHex, chainName, connect, nativeCurrencySymbol, provider, request.calls, request.sender, rpcUrl])
 
   const polling = useRef(false)
   useEffect(() => {
@@ -167,7 +238,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     const run = async () => {
       while (!canceled) {
         try {
-          const status = (await porto.provider.request({
+          const status = (await provider.request({
             method: 'wallet_getCallsStatus',
             params: [bundleId],
           })) as CallsStatus
@@ -187,7 +258,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
       canceled = true
       polling.current = false
     }
-  }, [bundleId, porto])
+  }, [bundleId, provider])
 
   const totalValue = useMemo(() => {
     let total = 0n
@@ -203,9 +274,10 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
       <div className="flex flex-col gap-1">
         <div className="text-sm font-medium text-zinc-200">{request.title}</div>
         <div className="text-sm text-zinc-400">
-          Chain <span className="text-zinc-200">{request.chainId}</span> · {request.calls.length}{' '}
-          call{request.calls.length === 1 ? '' : 's'} ·{' '}
-          <span className="text-zinc-200">{formatEther(totalValue)}</span> BERA total value
+          Chain <span className="text-zinc-200">{chainName}</span> ·{' '}
+          <span className="text-zinc-200">{request.chainId}</span> · {request.calls.length} call
+          {request.calls.length === 1 ? '' : 's'} ·{' '}
+          <span className="text-zinc-200">{formatEther(totalValue)}</span> {nativeCurrencySymbol} total value
         </div>
       </div>
 
@@ -219,7 +291,9 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
                   <div className="text-zinc-400">{shortAddress(call.to)}</div>
                 </div>
                 <div className="text-zinc-400">
-                  {call.valueWei ? `${formatEther(BigInt(call.valueWei))} BERA value` : '0 BERA value'}
+                  {call.valueWei
+                    ? `${formatEther(BigInt(call.valueWei))} ${nativeCurrencySymbol} value`
+                    : `0 ${nativeCurrencySymbol} value`}
                 </div>
               </div>
             ))}
@@ -227,13 +301,38 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setWalletId('porto')}
+              className={`rounded-md px-3 py-2 text-sm font-medium ${
+                walletId === 'porto' ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-200'
+              }`}
+            >
+              Porto
+            </button>
+            <button
+              type="button"
+              onClick={() => setWalletId('injected')}
+              disabled={!injectedProvider}
+              className={`rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60 ${
+                walletId === 'injected' ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-200'
+              }`}
+            >
+              Injected
+            </button>
+          </div>
           <button
             type="button"
             onClick={connect}
             disabled={connecting}
             className="rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-60"
           >
-            {account ? `Connected: ${shortAddress(account)}` : connecting ? 'Connecting…' : 'Connect Porto'}
+            {account
+              ? `Connected: ${shortAddress(account)}`
+              : connecting
+                ? 'Connecting…'
+                : `Connect ${walletId === 'porto' ? 'Porto' : 'Wallet'}`}
           </button>
           <button
             type="button"

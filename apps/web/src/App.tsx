@@ -27,7 +27,7 @@ function App() {
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold tracking-tight">earno</h1>
           <p className="text-sm text-zinc-400">
-            Browser executor for earno intents (Porto signing + batched calls).
+            Browser executor for earno intents (wallet signing + batched calls).
           </p>
         </header>
 

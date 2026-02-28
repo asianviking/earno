@@ -31,7 +31,13 @@ export const deposit = {
       .boolean()
       .optional()
       .describe(
-        'Generate a web link to sign + execute with Porto in the browser',
+        'Legacy alias for --web',
+      ),
+    web: z
+      .boolean()
+      .optional()
+      .describe(
+        'Generate a web link to sign + execute in the browser',
       ),
     webUrl: z
       .string()
@@ -72,7 +78,7 @@ export const deposit = {
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     const sender = c.options.sender ?? receiver
     const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
-    const wantPorto = c.options.porto ?? false
+    const wantWeb = c.options.web ?? c.options.porto ?? false
     const webUrl =
       c.options.webUrl ??
       c.env.EARNO_WEB_URL ??
@@ -119,8 +125,8 @@ export const deposit = {
 
     const steps = buildDeposit(amount, receiver, { includeApprove })
 
-    let portoLink: string | undefined
-    if (wantPorto) {
+    let executorUrl: string | undefined
+    if (wantWeb) {
       try {
         const req: EarnoWebRequestV1 = {
           v: 1,
@@ -129,6 +135,12 @@ export const deposit = {
           rpcUrl: rpc,
           sender: sender as `0x${string}`,
           receiver: receiver as `0x${string}`,
+          intent: {
+            plugin: 'earno',
+            action: 'deposit',
+            params: { amount, sender, receiver },
+            display: { strategy: 'BERA → sWBERA' },
+          },
           calls: steps.map((s) => ({
             label: s.label,
             to: s.to as `0x${string}`,
@@ -136,7 +148,7 @@ export const deposit = {
             ...(s.value ? { valueWei: wei.toString() } : {}),
           })),
         }
-        portoLink = buildEarnoWebUrl(webUrl, req)
+        executorUrl = buildEarnoWebUrl(webUrl, req)
       } catch {
         return c.error({
           code: 'INVALID_WEB_URL',
@@ -153,7 +165,7 @@ export const deposit = {
         amount: `${amount} BERA`,
         sender,
         receiver,
-        ...(portoLink ? { portoLink } : {}),
+        ...(executorUrl ? { executorUrl, portoLink: executorUrl } : {}),
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,

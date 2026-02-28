@@ -9,6 +9,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@earno/shared': path.resolve(__dirname, '../../src/shared'),
+    },
+  },
+  server: {
+    fs: {
+      allow: [path.resolve(__dirname, '../../src')],
     },
   },
 })

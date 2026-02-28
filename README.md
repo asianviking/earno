@@ -37,7 +37,7 @@ Outputs three `cast send` commands to execute in order:
 2. **Approve** WBERA for sWBERA
 3. **Deposit** WBERA → sWBERA
 
-### Sign + execute with Porto (browser)
+### Sign + execute (browser)
 
 Start the executor UI:
 
@@ -48,10 +48,10 @@ pnpm dev:web
 Generate a Porto link from the CLI:
 
 ```sh
-earno deposit 1.5 --receiver 0xYourAddress --porto
+earno deposit 1.5 --receiver 0xYourAddress --web
 ```
 
-Open the returned `portoLink`, connect in Porto, and execute the batched calls.
+Open the returned `executorUrl` (or legacy `portoLink`), pick a wallet (Porto or injected), and execute.
 
 ### Check balance
 
