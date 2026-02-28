@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Cli } from 'incur'
 import { deposit } from './commands/deposit.js'
 import { balance } from './commands/balance.js'

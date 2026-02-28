@@ -68,4 +68,4 @@ export const deposit = {
       },
     )
   },
-} as const
+}

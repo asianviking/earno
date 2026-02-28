@@ -73,4 +73,4 @@ export const withdraw = {
       },
     )
   },
-} as const
+}

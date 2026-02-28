@@ -9,23 +9,27 @@ Built with [incur](https://github.com/wevm/incur) + [viem](https://github.com/we
 ## Install
 
 ```sh
+# Install globally
+npm i -g bearn
+
+# Or clone and link
 git clone https://github.com/berachain-skunkworks/bearn.git
 cd bearn
 pnpm install
+pnpm build
+pnpm link --global
 ```
 
-## Usage
-
-Run via `pnpm bearn` (or `node --import tsx src/cli.ts`):
+After either method, `bearn` is available everywhere:
 
 ```sh
-pnpm bearn --help
+bearn --help
 ```
 
 ### Deposit BERA into sWBERA
 
 ```sh
-pnpm bearn deposit 1.5 --receiver 0xYourAddress
+bearn deposit 1.5 --receiver 0xYourAddress
 ```
 
 Outputs three `cast send` commands to execute in order:
@@ -36,7 +40,7 @@ Outputs three `cast send` commands to execute in order:
 ### Check balance
 
 ```sh
-pnpm bearn balance --address 0xYourAddress
+bearn balance --address 0xYourAddress
 ```
 
 Queries sWBERA on-chain and shows:
@@ -48,7 +52,7 @@ Queries sWBERA on-chain and shows:
 ### Withdraw sWBERA back to BERA
 
 ```sh
-pnpm bearn withdraw 1.0 --receiver 0xYourAddress
+bearn withdraw 1.0 --receiver 0xYourAddress
 ```
 
 Outputs `cast send` commands to:
@@ -60,9 +64,9 @@ Outputs `cast send` commands to:
 Default output is TOON (token-efficient for agents). Use flags for alternatives:
 
 ```sh
-pnpm bearn deposit 1.0 --receiver 0x... --json      # JSON
-pnpm bearn deposit 1.0 --receiver 0x... --format yaml # YAML
-pnpm bearn deposit 1.0 --receiver 0x... --format md   # Markdown
+bearn deposit 1.0 --receiver 0x... --json      # JSON
+bearn deposit 1.0 --receiver 0x... --format yaml # YAML
+bearn deposit 1.0 --receiver 0x... --format md   # Markdown
 ```
 
 ## Agent integration
@@ -71,13 +75,13 @@ bearn is agent-native via incur. Any AI agent can discover and use it:
 
 ```sh
 # Register as an MCP server (Claude Code, Cursor, etc.)
-pnpm bearn mcp add
+bearn mcp add
 
 # Sync skill files to your agent
-pnpm bearn skills add
+bearn skills add
 
 # Print LLM-readable command manifest
-pnpm bearn --llms
+bearn --llms
 ```
 
 ## Environment variables
