@@ -477,6 +477,9 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
                     ? `${formatEther(BigInt(call.valueWei))} ${nativeCurrencySymbol} value`
                     : `0 ${nativeCurrencySymbol} value`}
                 </div>
+                {call.valueWei && BigInt(call.valueWei) > 0n ? (
+                  <div className="text-amber-300">Native value transfer</div>
+                ) : null}
                 {call.data.startsWith(APPROVE_SELECTOR) ? (
                   <div className="text-amber-300">Token approval</div>
                 ) : null}
