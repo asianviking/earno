@@ -2,6 +2,7 @@ import { z } from 'incur'
 import { buildRedeem } from '../tx.js'
 import { BERACHAIN } from '../contracts.js'
 import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
+import { resolveCliChain } from '../chain.js'
 
 export const withdraw = {
   description:
@@ -36,13 +37,37 @@ export const withdraw = {
       .describe(
         'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
       ),
+    chain: z
+      .string()
+      .optional()
+      .describe('Chain key or chainId (default: berachain)'),
+    rpc: z
+      .string()
+      .optional()
+      .describe('RPC URL override (default: $EARNO_RPC or chain default)'),
   }),
   env: z.object({
+    EARNO_CHAIN: z
+      .string()
+      .optional()
+      .describe('Default chain key/chainId (default: berachain)'),
+    BEARN_CHAIN: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_CHAIN'),
+    EARNO_RPC: z
+      .string()
+      .optional()
+      .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
+    BEARN_RPC: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_RPC'),
     EARNO_WEB_URL: z
       .string()
       .optional()
       .describe(
-        'Web client base URL for --porto links (default: http://localhost:5173)',
+        'Web client base URL for --web links (default: http://localhost:5173)',
       ),
     BEARN_WEB_URL: z
       .string()
@@ -59,6 +84,8 @@ export const withdraw = {
   run(c: any) {
     const { shares } = c.args
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
+    let chainId = BERACHAIN.id
+    let rpcUrl = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
     const wantWeb = c.options.web ?? c.options.porto ?? false
     const webUrl =
       c.options.webUrl ??
@@ -83,7 +110,31 @@ export const withdraw = {
       })
     }
 
-    const steps = buildRedeem(shares, receiver)
+    try {
+      const resolved = resolveCliChain({
+        chain: c.options.chain,
+        rpcUrl: c.options.rpc,
+        env: c.env,
+      })
+      chainId = resolved.chain.id
+      rpcUrl = resolved.rpcUrl
+    } catch (e) {
+      return c.error({
+        code: 'INVALID_CHAIN',
+        message: e instanceof Error ? e.message : 'Invalid chain configuration',
+        retryable: true,
+      })
+    }
+
+    if (chainId !== BERACHAIN.id) {
+      return c.error({
+        code: 'UNSUPPORTED_CHAIN',
+        message: `withdraw is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        retryable: true,
+      })
+    }
+
+    const steps = buildRedeem(shares, receiver, { rpcUrl })
 
     let executorUrl: string | undefined
     if (wantWeb) {
@@ -92,13 +143,14 @@ export const withdraw = {
         const req: EarnoWebRequestV1 = {
           v: 1,
           title: 'Withdraw sWBERA → BERA',
-          chainId: BERACHAIN.id,
+          chainId,
+          rpcUrl,
           sender: receiver as `0x${string}`,
           receiver: receiver as `0x${string}`,
           intent: {
             plugin: 'earno',
             action: 'withdraw',
-            params: { shares, receiver },
+            params: { shares, receiver, chainId, rpcUrl },
             display: { strategy: 'sWBERA → BERA' },
           },
           calls: executable.map((s) => ({

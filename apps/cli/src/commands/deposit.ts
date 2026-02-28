@@ -3,13 +3,7 @@ import { createPublicClient, http, parseEther } from 'viem'
 import { buildDeposit } from '../tx.js'
 import { BERACHAIN, SWBERA, WBERA } from '../contracts.js'
 import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
-
-const berachain = {
-  id: BERACHAIN.id,
-  name: 'Berachain',
-  nativeCurrency: { name: 'BERA', symbol: 'BERA', decimals: 18 },
-  rpcUrls: { default: { http: [BERACHAIN.rpc] } },
-} as const
+import { resolveCliChain } from '../chain.js'
 
 export const deposit = {
   description: 'Deposit BERA into sWBERA (wraps BERA → WBERA → sWBERA)',
@@ -45,12 +39,28 @@ export const deposit = {
       .describe(
         'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
       ),
+    chain: z
+      .string()
+      .optional()
+      .describe('Chain key or chainId (default: berachain)'),
+    rpc: z
+      .string()
+      .optional()
+      .describe('RPC URL override (default: $EARNO_RPC or chain default)'),
   }),
   env: z.object({
+    EARNO_CHAIN: z
+      .string()
+      .optional()
+      .describe('Default chain key/chainId (default: berachain)'),
+    BEARN_CHAIN: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_CHAIN'),
     EARNO_RPC: z
       .string()
       .optional()
-      .describe(`Berachain RPC URL (default: ${BERACHAIN.rpc})`),
+      .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
     BEARN_RPC: z
       .string()
       .optional()
@@ -59,7 +69,7 @@ export const deposit = {
       .string()
       .optional()
       .describe(
-        'Web client base URL for --porto links (default: http://localhost:5173)',
+        'Web client base URL for --web links (default: http://localhost:5173)',
       ),
     BEARN_WEB_URL: z
       .string()
@@ -77,7 +87,8 @@ export const deposit = {
     const { amount } = c.args
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     const sender = c.options.sender ?? receiver
-    const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+    let chainId = BERACHAIN.id
+    let rpcUrl = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
     const wantWeb = c.options.web ?? c.options.porto ?? false
     const webUrl =
       c.options.webUrl ??
@@ -102,9 +113,40 @@ export const deposit = {
       })
     }
 
+    try {
+      const resolved = resolveCliChain({
+        chain: c.options.chain,
+        rpcUrl: c.options.rpc,
+        env: c.env,
+      })
+      chainId = resolved.chain.id
+      rpcUrl = resolved.rpcUrl
+    } catch (e) {
+      return c.error({
+        code: 'INVALID_CHAIN',
+        message: e instanceof Error ? e.message : 'Invalid chain configuration',
+        retryable: true,
+      })
+    }
+
+    if (chainId !== BERACHAIN.id) {
+      return c.error({
+        code: 'UNSUPPORTED_CHAIN',
+        message: `deposit is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        retryable: true,
+      })
+    }
+
+    const chain = {
+      id: BERACHAIN.id,
+      name: 'Berachain',
+      nativeCurrency: { name: 'BERA', symbol: 'BERA', decimals: 18 },
+      rpcUrls: { default: { http: [rpcUrl] } },
+    } as const
+
     const client = createPublicClient({
-      chain: { ...berachain, rpcUrls: { default: { http: [rpc] } } },
-      transport: http(rpc),
+      chain,
+      transport: http(rpcUrl),
     })
 
     const wei = parseEther(amount)
@@ -123,7 +165,7 @@ export const deposit = {
       includeApprove = true
     }
 
-    const steps = buildDeposit(amount, receiver, { includeApprove })
+    const steps = buildDeposit(amount, receiver, { includeApprove, rpcUrl })
 
     let executorUrl: string | undefined
     if (wantWeb) {
@@ -131,14 +173,14 @@ export const deposit = {
         const req: EarnoWebRequestV1 = {
           v: 1,
           title: 'Deposit BERA → sWBERA',
-          chainId: BERACHAIN.id,
-          rpcUrl: rpc,
+          chainId,
+          rpcUrl,
           sender: sender as `0x${string}`,
           receiver: receiver as `0x${string}`,
           intent: {
             plugin: 'earno',
             action: 'deposit',
-            params: { amount, sender, receiver },
+            params: { amount, sender, receiver, chainId, rpcUrl },
             display: { strategy: 'BERA → sWBERA' },
           },
           calls: steps.map((s) => ({

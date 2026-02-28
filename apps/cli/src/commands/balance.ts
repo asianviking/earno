@@ -1,26 +1,36 @@
 import { z } from 'incur'
-import { createPublicClient, formatEther, http, parseEther } from 'viem'
+import { createPublicClient, formatEther, http } from 'viem'
 import { BERACHAIN, SWBERA } from '../contracts.js'
 import { formatSwberaBalanceSummary } from '../balance-format.js'
-
-const berachain = {
-  id: BERACHAIN.id,
-  name: 'Berachain',
-  nativeCurrency: { name: 'BERA', symbol: 'BERA', decimals: 18 },
-  rpcUrls: { default: { http: [BERACHAIN.rpc] } },
-} as const
+import { resolveCliChain } from '../chain.js'
 
 export const balance = {
   description: 'Check sWBERA balance and underlying BERA value',
   options: z.object({
     address: z.string().describe('Wallet address to check'),
+    chain: z
+      .string()
+      .optional()
+      .describe('Chain key or chainId (default: berachain)'),
+    rpc: z
+      .string()
+      .optional()
+      .describe('RPC URL override (default: $EARNO_RPC or chain default)'),
   }),
   env: z.object({
+    EARNO_CHAIN: z
+      .string()
+      .optional()
+      .describe('Default chain key/chainId (default: berachain)'),
+    BEARN_CHAIN: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_CHAIN'),
     EARNO_RPC: z
       .string()
       .optional()
       .describe(
-        `Berachain RPC URL (default: ${BERACHAIN.rpc})`,
+        `RPC URL (default: ${BERACHAIN.rpc})`,
       ),
     BEARN_RPC: z
       .string()
@@ -35,11 +45,43 @@ export const balance = {
   ],
   async run(c: any) {
     const { address } = c.options
-    const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+    let chainId = BERACHAIN.id
+    let rpcUrl = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+
+    try {
+      const resolved = resolveCliChain({
+        chain: c.options.chain,
+        rpcUrl: c.options.rpc,
+        env: c.env,
+      })
+      chainId = resolved.chain.id
+      rpcUrl = resolved.rpcUrl
+    } catch (e) {
+      return c.error({
+        code: 'INVALID_CHAIN',
+        message: e instanceof Error ? e.message : 'Invalid chain configuration',
+        retryable: true,
+      })
+    }
+
+    if (chainId !== BERACHAIN.id) {
+      return c.error({
+        code: 'UNSUPPORTED_CHAIN',
+        message: `balance is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        retryable: true,
+      })
+    }
+
+    const chain = {
+      id: BERACHAIN.id,
+      name: 'Berachain',
+      nativeCurrency: { name: 'BERA', symbol: 'BERA', decimals: 18 },
+      rpcUrls: { default: { http: [rpcUrl] } },
+    } as const
 
     const client = createPublicClient({
-      chain: { ...berachain, rpcUrls: { default: { http: [rpc] } } },
-      transport: http(rpc),
+      chain,
+      transport: http(rpcUrl),
     })
 
     const [shares, totalAssets, totalSupply] = await Promise.all([
