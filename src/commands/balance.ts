@@ -1,6 +1,7 @@
 import { z } from 'incur'
 import { createPublicClient, formatEther, http, parseEther } from 'viem'
 import { BERACHAIN, SWBERA } from '../contracts.js'
+import { formatSwberaBalanceSummary } from '../balance-format.js'
 
 const berachain = {
   id: BERACHAIN.id,
@@ -66,19 +67,14 @@ export const balance = {
       })) as bigint
     }
 
-    const exchangeRate =
-      totalSupply > 0n
-        ? Number(formatEther(totalAssets)) / Number(formatEther(totalSupply))
-        : 1
-
     return c.ok(
-      {
+      formatSwberaBalanceSummary({
         address,
-        sWBERA: formatEther(shares),
-        underlyingBERA: formatEther(underlyingBera),
-        exchangeRate: `1 sWBERA = ${exchangeRate.toFixed(4)} BERA`,
-        totalVaultAssets: `${formatEther(totalAssets)} WBERA`,
-      },
+        shares,
+        underlyingBera,
+        totalAssets,
+        totalSupply,
+      }),
       {
         cta: {
           commands:
