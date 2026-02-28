@@ -17,7 +17,7 @@ git clone https://github.com/asianviking/earno.git
 cd earno
 pnpm install
 pnpm build
-pnpm link --global
+pnpm --filter earno link --global
 ```
 
 After either method, `earno` is available everywhere:
@@ -115,7 +115,7 @@ earno --llms
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
-| `EARNO_WEB_URL` | Base URL for `--porto` links | `http://localhost:5173` |
+| `EARNO_WEB_URL` | Base URL for `--web` executor links | `http://localhost:5173` |
 | `BEARN_RPC` | Legacy alias for `EARNO_RPC` | — |
 | `BEARN_WEB_URL` | Legacy alias for `EARNO_WEB_URL` | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |

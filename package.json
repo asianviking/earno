@@ -1,43 +1,15 @@
 {
-  "name": "earno",
-  "version": "0.1.0",
-  "description": "Berachain yield CLI — earn from your terminal",
-  "type": "module",
-  "bin": {
-    "earno": "./dist/cli.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "dev": "node --import tsx src/cli.ts",
-    "dev:web": "pnpm --filter earno-web dev",
-    "build": "tsc",
-    "build:web": "pnpm --filter earno-web build",
-    "prepack": "npm run build",
-    "earno": "node --import tsx src/cli.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview:web": "pnpm --filter earno-web preview"
-  },
-  "keywords": [
-    "berachain",
-    "defi",
-    "yield",
-    "cli"
-  ],
-  "author": "",
-  "license": "MIT",
+  "name": "earno-workspace",
+  "private": true,
+  "version": "0.0.0",
   "packageManager": "pnpm@10.29.2",
-  "dependencies": {
-    "fflate": "^0.8.2",
-    "incur": "^0.1.7",
-    "viem": "^2.46.3"
-  },
-  "devDependencies": {
-    "@types/node": "^25.3.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+  "scripts": {
+    "build": "pnpm --filter @earno/core build && pnpm --filter earno build && pnpm --filter earno-web build",
+    "dev": "pnpm --filter @earno/core build && pnpm --filter earno dev",
+    "earno": "pnpm --filter @earno/core build && pnpm --filter earno earno",
+    "test": "pnpm --filter @earno/core build && pnpm --filter earno test",
+    "dev:web": "pnpm --filter @earno/core build && pnpm --filter earno-web dev",
+    "build:web": "pnpm --filter @earno/core build && pnpm --filter earno-web build",
+    "preview:web": "pnpm --filter earno-web preview"
   }
 }

@@ -13,12 +13,11 @@ Goal: let anyone author **strategy plugins** (build call bundles) and **wallet p
 ## Monorepo structure (target)
 
 - `apps/web` — Vite web executor (wallet selection, confirmations, send).
-- `apps/cli` (or root package) — CLI that builds requests and prints URLs.
-- `src/shared/*` (today) — shared, cross-runtime code used by both apps.
-- Future extraction to `packages/*` once we’re ready to publish `@earno/*` libs:
-  - `@earno/core` (request schema + transports)
+- `apps/cli` — CLI that builds requests and prints URLs.
+- `packages/core` — shared core types + request transport + chain defaults.
+- Future extraction to more `packages/*` as the plugin ecosystem grows:
   - `@earno/plugin-kit` (plugin types, manifests, test helpers)
-  - `@earno/chains` (chain registry + address books)
+  - `@earno/chains` (richer chain registry + address books)
 
 ## The “Action Request” contract
 
@@ -124,4 +123,3 @@ Rule:
 4. Strategy plugin interface + one example external plugin repo (dogfood).
 5. Callback loop (`--wait`) + local status display in CLI.
 6. Security hardening: allowlists, contract warnings, optional preflight simulation.
-

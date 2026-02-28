@@ -1,5 +1,5 @@
 import { type Abi } from 'viem'
-import { BERACHAIN_MAINNET } from './shared/chains.js'
+import { BERACHAIN_MAINNET } from '@earno/core/chains'
 
 export const BERACHAIN = {
   id: BERACHAIN_MAINNET.id,

@@ -6,11 +6,13 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  apps/cli:
     dependencies:
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
+      '@earno/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       incur:
         specifier: ^0.1.7
         version: 0.1.7
@@ -33,9 +35,9 @@ importers:
 
   apps/web:
     dependencies:
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
+      '@earno/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       porto:
         specifier: ^0.2.37
         version: 0.2.37(@types/react@19.2.14)(@wagmi/core@3.4.0(@types/react@19.2.14)(ox@0.12.4(typescript@5.9.3)(zod@4.3.6))(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@4.3.6)))(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(typescript@5.9.3)(zod@4.3.6))
@@ -97,6 +99,16 @@ importers:
       vite:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@24.11.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/core:
+    dependencies:
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 
