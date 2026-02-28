@@ -45,13 +45,23 @@ Start the executor UI:
 pnpm dev:web
 ```
 
-Generate a Porto link from the CLI:
+Generate a web link from the CLI:
 
 ```sh
 earno deposit 1.5 --receiver 0xYourAddress --web
 ```
 
 Open the returned `executorUrl` (or legacy `portoLink`), pick a wallet (Porto or injected), and execute.
+
+### Deploy the web executor (Vercel)
+
+1. Import the repo in Vercel and set **Root Directory** to `apps/web`.
+2. Deploy (the repo includes `apps/web/vercel.json`).
+3. Point the CLI at your deployed URL:
+
+```sh
+EARNO_WEB_URL=https://your-app.vercel.app earno deposit 1.0 --receiver 0xYourAddress --web
+```
 
 ### Check balance
 
