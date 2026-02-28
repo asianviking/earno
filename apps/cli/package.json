@@ -1,5 +1,5 @@
 {
-  "name": "earno",
+  "name": "@earno/cli",
   "version": "0.1.0",
   "description": "EVM intent CLI — build + execute transaction bundles",
   "type": "module",
@@ -17,6 +17,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "node --import tsx src/cli.ts",
     "build": "tsc",

@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "packageManager": "pnpm@10.29.2",
   "scripts": {
-    "build": "pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter earno build && pnpm --filter earno-web build",
-    "dev": "pnpm --filter @earno/core build && pnpm --filter earno dev",
-    "earno": "pnpm --filter @earno/core build && pnpm --filter earno earno",
-    "test": "pnpm --filter @earno/core build && pnpm --filter earno test",
+    "build": "pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter @earno/cli build && pnpm --filter earno-web build",
+    "dev": "pnpm --filter @earno/core build && pnpm --filter @earno/cli dev",
+    "earno": "pnpm --filter @earno/core build && pnpm --filter @earno/cli earno",
+    "test": "pnpm --filter @earno/core build && pnpm --filter @earno/cli test",
     "dev:web": "pnpm --filter @earno/core build && pnpm --filter earno-web dev",
     "build:web": "pnpm --filter @earno/core build && pnpm --filter earno-web build",
     "preview:web": "pnpm --filter earno-web preview"

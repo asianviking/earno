@@ -38,7 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter earno build
+        run: pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter @earno/cli build
 
       - name: Pack release assets
         run: |
@@ -54,7 +54,7 @@ jobs:
           VERSION="${TAG#v}"
           npm publish "release-assets/earno-core-${VERSION}.tgz" --access public
           npm publish "release-assets/earno-plugin-example-${VERSION}.tgz" --access public
-          npm publish "release-assets/earno-${VERSION}.tgz" --access public
+          npm publish "release-assets/earno-cli-${VERSION}.tgz" --access public
 
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
