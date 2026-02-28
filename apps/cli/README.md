@@ -1,6 +1,6 @@
 # earno
 
-Berachain yield CLI — earn from your terminal.
+EVM intent CLI — build + execute transaction bundles.
 
 Repo: `asianviking/earno`
 
@@ -15,4 +15,3 @@ npm i -g earno
 ```sh
 earno --help
 ```
-

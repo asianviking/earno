@@ -22,20 +22,12 @@ export const balance = {
       .string()
       .optional()
       .describe('Default chain key/chainId (default: berachain)'),
-    BEARN_CHAIN: z
-      .string()
-      .optional()
-      .describe('Legacy alias for EARNO_CHAIN'),
     EARNO_RPC: z
       .string()
       .optional()
       .describe(
         `RPC URL (default: ${BERACHAIN.rpc})`,
       ),
-    BEARN_RPC: z
-      .string()
-      .optional()
-      .describe('Legacy alias for EARNO_RPC'),
   }),
   examples: [
     {
@@ -46,7 +38,7 @@ export const balance = {
   async run(c: any) {
     const { address } = c.options
     let chainId = BERACHAIN.id
-    let rpcUrl = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+    let rpcUrl = c.env.EARNO_RPC ?? BERACHAIN.rpc
 
     try {
       const resolved = resolveCliChain({
@@ -54,8 +46,8 @@ export const balance = {
         rpcUrl: c.options.rpc,
         env: c.env,
       })
-      chainId = resolved.chain.id
-      rpcUrl = resolved.rpcUrl
+        chainId = resolved.chain.id
+        rpcUrl = resolved.rpcUrl
     } catch (e) {
       return c.error({
         code: 'INVALID_CHAIN',
