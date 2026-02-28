@@ -6,9 +6,13 @@
   "bin": {
     "bearn": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "node --import tsx src/cli.ts",
     "build": "tsc",
+    "prepack": "npm run build",
     "bearn": "node --import tsx src/cli.ts"
   },
   "keywords": ["berachain", "defi", "yield", "cli"],
