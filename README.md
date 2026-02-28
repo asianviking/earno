@@ -114,8 +114,10 @@ earno --llms
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `EARNO_CHAIN` | Default chain key/chainId | `berachain` |
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
 | `EARNO_WEB_URL` | Base URL for `--web` executor links | `http://localhost:5173` |
+| `BEARN_CHAIN` | Legacy alias for `EARNO_CHAIN` | — |
 | `BEARN_RPC` | Legacy alias for `EARNO_RPC` | — |
 | `BEARN_WEB_URL` | Legacy alias for `EARNO_WEB_URL` | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
