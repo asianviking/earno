@@ -2,7 +2,7 @@ import { z } from 'incur'
 import { createPublicClient, http, parseEther } from 'viem'
 import { buildDeposit } from '../tx.js'
 import { BERACHAIN, SWBERA, WBERA } from '../contracts.js'
-import { buildBearnWebUrl, type BearnWebRequestV1 } from '../porto-link.js'
+import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
 
 const berachain = {
   id: BERACHAIN.id,
@@ -37,20 +37,28 @@ export const deposit = {
       .string()
       .optional()
       .describe(
-        'Web client base URL (default: $BEARN_WEB_URL or http://localhost:5173)',
+        'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
       ),
   }),
   env: z.object({
-    BEARN_RPC: z
+    EARNO_RPC: z
       .string()
       .optional()
       .describe(`Berachain RPC URL (default: ${BERACHAIN.rpc})`),
-    BEARN_WEB_URL: z
+    BEARN_RPC: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_RPC'),
+    EARNO_WEB_URL: z
       .string()
       .optional()
       .describe(
         'Web client base URL for --porto links (default: http://localhost:5173)',
       ),
+    BEARN_WEB_URL: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_WEB_URL'),
   }),
   examples: [
     {
@@ -63,10 +71,13 @@ export const deposit = {
     const { amount } = c.args
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     const sender = c.options.sender ?? receiver
-    const rpc = c.env.BEARN_RPC ?? BERACHAIN.rpc
+    const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
     const wantPorto = c.options.porto ?? false
     const webUrl =
-      c.options.webUrl ?? c.env.BEARN_WEB_URL ?? 'http://localhost:5173'
+      c.options.webUrl ??
+      c.env.EARNO_WEB_URL ??
+      c.env.BEARN_WEB_URL ??
+      'http://localhost:5173'
 
     if (receiver === '0xYOUR_ADDRESS') {
       return c.error({
@@ -111,7 +122,7 @@ export const deposit = {
     let portoLink: string | undefined
     if (wantPorto) {
       try {
-        const req: BearnWebRequestV1 = {
+        const req: EarnoWebRequestV1 = {
           v: 1,
           title: 'Deposit BERA → sWBERA',
           chainId: BERACHAIN.id,
@@ -125,12 +136,12 @@ export const deposit = {
             ...(s.value ? { valueWei: wei.toString() } : {}),
           })),
         }
-        portoLink = buildBearnWebUrl(webUrl, req)
+        portoLink = buildEarnoWebUrl(webUrl, req)
       } catch {
         return c.error({
           code: 'INVALID_WEB_URL',
           message:
-            'Invalid --webUrl / $BEARN_WEB_URL. Expected a fully-qualified URL like http://localhost:5173',
+            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like http://localhost:5173',
           retryable: true,
         })
       }

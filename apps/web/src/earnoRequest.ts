@@ -1,18 +1,18 @@
-export type BearnWebCall = {
+export type EarnoWebCall = {
   label: string
   to: `0x${string}`
   data: `0x${string}`
   valueWei?: string
 }
 
-export type BearnWebRequestV1 = {
+export type EarnoWebRequestV1 = {
   v: 1
   title: string
   chainId: number
   rpcUrl?: string
   sender?: `0x${string}`
   receiver?: `0x${string}`
-  calls: BearnWebCall[]
+  calls: EarnoWebCall[]
 }
 
 function base64UrlToBytes(input: string): Uint8Array {
@@ -33,7 +33,7 @@ function isHexData(value: unknown): value is `0x${string}` {
   return typeof value === 'string' && value.startsWith('0x')
 }
 
-export function decodeBearnWebRequest(encoded: string): BearnWebRequestV1 {
+export function decodeEarnoWebRequest(encoded: string): EarnoWebRequestV1 {
   const json = decodeBase64UrlUtf8(encoded)
   const parsed = JSON.parse(json) as unknown
 
@@ -41,7 +41,7 @@ export function decodeBearnWebRequest(encoded: string): BearnWebRequestV1 {
     throw new Error('Invalid request payload')
   }
 
-  const req = parsed as Partial<BearnWebRequestV1>
+  const req = parsed as Partial<EarnoWebRequestV1>
   if (req.v !== 1) throw new Error('Unsupported request version')
   if (typeof req.title !== 'string' || !req.title) {
     throw new Error('Missing request title')
@@ -55,7 +55,7 @@ export function decodeBearnWebRequest(encoded: string): BearnWebRequestV1 {
 
   for (const call of req.calls) {
     if (!call || typeof call !== 'object') throw new Error('Invalid call')
-    const c = call as Partial<BearnWebCall>
+    const c = call as Partial<EarnoWebCall>
     if (typeof c.label !== 'string' || !c.label) {
       throw new Error('Call missing label')
     }
@@ -66,7 +66,7 @@ export function decodeBearnWebRequest(encoded: string): BearnWebRequestV1 {
     }
   }
 
-  return req as BearnWebRequestV1
+  return req as EarnoWebRequestV1
 }
 
 export function readRequestFromLocation(): string | null {
@@ -80,4 +80,3 @@ export function readRequestFromLocation(): string | null {
   const hashQuery = new URLSearchParams(hash.slice(idx + 1))
   return hashQuery.get('r')
 }
-

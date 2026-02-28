@@ -1,4 +1,4 @@
-# bearn
+# earno
 
 Berachain yield CLI — earn from your terminal.
 
@@ -10,26 +10,26 @@ Built with [incur](https://github.com/wevm/incur) + [viem](https://github.com/we
 
 ```sh
 # Install globally
-npm i -g bearn
+npm i -g earno
 
 # Or clone and link
-git clone https://github.com/berachain-skunkworks/bearn.git
-cd bearn
+git clone https://github.com/asianviking/earno.git
+cd earno
 pnpm install
 pnpm build
 pnpm link --global
 ```
 
-After either method, `bearn` is available everywhere:
+After either method, `earno` is available everywhere:
 
 ```sh
-bearn --help
+earno --help
 ```
 
 ### Deposit BERA into sWBERA
 
 ```sh
-bearn deposit 1.5 --receiver 0xYourAddress
+earno deposit 1.5 --receiver 0xYourAddress
 ```
 
 Outputs three `cast send` commands to execute in order:
@@ -48,7 +48,7 @@ pnpm dev:web
 Generate a Porto link from the CLI:
 
 ```sh
-bearn deposit 1.5 --receiver 0xYourAddress --porto
+earno deposit 1.5 --receiver 0xYourAddress --porto
 ```
 
 Open the returned `portoLink`, connect in Porto, and execute the batched calls.
@@ -56,7 +56,7 @@ Open the returned `portoLink`, connect in Porto, and execute the batched calls.
 ### Check balance
 
 ```sh
-bearn balance --address 0xYourAddress
+earno balance --address 0xYourAddress
 ```
 
 Queries sWBERA on-chain and shows:
@@ -68,7 +68,7 @@ Queries sWBERA on-chain and shows:
 ### Withdraw sWBERA back to BERA
 
 ```sh
-bearn withdraw 1.0 --receiver 0xYourAddress
+earno withdraw 1.0 --receiver 0xYourAddress
 ```
 
 Outputs `cast send` commands to:
@@ -80,32 +80,34 @@ Outputs `cast send` commands to:
 Default output is TOON (token-efficient for agents). Use flags for alternatives:
 
 ```sh
-bearn deposit 1.0 --receiver 0x... --json      # JSON
-bearn deposit 1.0 --receiver 0x... --format yaml # YAML
-bearn deposit 1.0 --receiver 0x... --format md   # Markdown
+earno deposit 1.0 --receiver 0x... --json      # JSON
+earno deposit 1.0 --receiver 0x... --format yaml # YAML
+earno deposit 1.0 --receiver 0x... --format md   # Markdown
 ```
 
 ## Agent integration
 
-bearn is agent-native via incur. Any AI agent can discover and use it:
+earno is agent-native via incur. Any AI agent can discover and use it:
 
 ```sh
 # Register as an MCP server (Claude Code, Cursor, etc.)
-bearn mcp add
+earno mcp add
 
 # Sync skill files to your agent
-bearn skills add
+earno skills add
 
 # Print LLM-readable command manifest
-bearn --llms
+earno --llms
 ```
 
 ## Environment variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `BEARN_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
-| `BEARN_WEB_URL` | Base URL for `--porto` links | `http://localhost:5173` |
+| `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
+| `EARNO_WEB_URL` | Base URL for `--porto` links | `http://localhost:5173` |
+| `BEARN_RPC` | Legacy alias for `EARNO_RPC` | — |
+| `BEARN_WEB_URL` | Legacy alias for `EARNO_WEB_URL` | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 
 ## Contracts
