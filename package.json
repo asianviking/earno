@@ -13,9 +13,16 @@
     "dev": "node --import tsx src/cli.ts",
     "build": "tsc",
     "prepack": "npm run build",
-    "bearn": "node --import tsx src/cli.ts"
+    "bearn": "node --import tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "keywords": ["berachain", "defi", "yield", "cli"],
+  "keywords": [
+    "berachain",
+    "defi",
+    "yield",
+    "cli"
+  ],
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.29.2",
@@ -26,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^25.3.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }
