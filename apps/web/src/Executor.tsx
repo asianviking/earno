@@ -8,6 +8,18 @@ type Eip1193Provider = {
   request: (args: { method: string; params?: unknown }) => Promise<unknown>
 }
 
+function buildCallbackUrl(
+  baseUrl: string,
+  params: Record<string, string | undefined>,
+): string {
+  const url = new URL(baseUrl)
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue
+    url.searchParams.set(key, value)
+  }
+  return url.toString()
+}
+
 type CallsStatus = {
   status: number
   id: string
@@ -85,6 +97,7 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const [callsStatus, setCallsStatus] = useState<CallsStatus | null>(null)
   const [txHashes, setTxHashes] = useState<`0x${string}`[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
 
   const [walletId, setWalletId] = useState<'porto' | 'injected'>('porto')
 
@@ -260,6 +273,39 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     }
   }, [bundleId, provider])
 
+  const callbackSent = useRef(false)
+  useEffect(() => {
+    if (!request.callback) return
+    if (callbackSent.current) return
+
+    const hashes =
+      txHashes ??
+      (callsStatus && Array.isArray(callsStatus.receipts)
+        ? (callsStatus.receipts
+            .map((r) => (r as { transactionHash?: `0x${string}` }).transactionHash)
+            .filter(Boolean) as `0x${string}`[])
+        : null)
+
+    if (!hashes || hashes.length === 0) return
+
+    const primary = hashes[0]
+    const url = buildCallbackUrl(request.callback.url, {
+      state: request.callback.state,
+      txHash: primary,
+      txHashes: hashes.join(','),
+      bundleId: bundleId ?? undefined,
+      status: callsStatus ? String(callsStatus.status) : undefined,
+    })
+
+    callbackSent.current = true
+    setCallbackUrl(url)
+
+    // Use navigation instead of fetch to avoid https→http localhost mixed-content issues.
+    setTimeout(() => {
+      window.location.assign(url)
+    }, 500)
+  }, [bundleId, callsStatus, request.callback, txHashes])
+
   const totalValue = useMemo(() => {
     let total = 0n
     for (const call of request.calls) {
@@ -352,6 +398,18 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
         {error ? (
           <div className="rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
             {error}
+          </div>
+        ) : null}
+
+        {callbackUrl ? (
+          <div className="rounded-md border border-zinc-800 bg-zinc-950/40 p-3 text-sm text-zinc-200">
+            <div className="text-zinc-400">Returning to CLI</div>
+            <a
+              href={callbackUrl}
+              className="mt-2 block break-all font-mono text-xs text-emerald-300 underline"
+            >
+              {callbackUrl}
+            </a>
           </div>
         ) : null}
 
