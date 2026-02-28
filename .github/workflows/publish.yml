@@ -44,9 +44,9 @@ jobs:
         run: |
           rm -rf release-assets
           mkdir -p release-assets
-          pnpm -C packages/core pack --pack-destination release-assets
-          pnpm -C packages/plugin-example pack --pack-destination release-assets
-          pnpm -C apps/cli pack --pack-destination release-assets
+          pnpm -C packages/core pack --pack-destination ../../release-assets
+          pnpm -C packages/plugin-example pack --pack-destination ../../release-assets
+          pnpm -C apps/cli pack --pack-destination ../../release-assets
 
       - name: Publish
         run: |
