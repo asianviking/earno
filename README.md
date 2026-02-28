@@ -26,6 +26,18 @@ After either method, `earno` is available everywhere:
 earno --help
 ```
 
+## Plugins
+
+earno supports strategy plugins as nested command groups (e.g. `earno bend deposit ...`).
+
+```sh
+# Add a plugin spec to your local config (does not install it)
+earno plugin add @ayvee/bend
+
+# Or load plugins ad-hoc for a single run
+EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress --web
+```
+
 ### Deposit BERA into sWBERA
 
 ```sh
@@ -52,6 +64,12 @@ earno deposit 1.5 --receiver 0xYourAddress --web
 ```
 
 Open the returned `executorUrl` (or legacy `portoLink`), pick a wallet (Porto or injected), and execute.
+
+To close the loop and have the browser send the tx hash back to your terminal:
+
+```sh
+earno deposit 1.5 --receiver 0xYourAddress --web --wait
+```
 
 ### Deploy the web executor (Vercel)
 
@@ -114,8 +132,10 @@ earno --llms
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `EARNO_CHAIN` | Default chain key/chainId | `berachain` |
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
 | `EARNO_WEB_URL` | Base URL for `--web` executor links | `http://localhost:5173` |
+| `BEARN_CHAIN` | Legacy alias for `EARNO_CHAIN` | — |
 | `BEARN_RPC` | Legacy alias for `EARNO_RPC` | — |
 | `BEARN_WEB_URL` | Legacy alias for `EARNO_WEB_URL` | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |

@@ -1,4 +1,4 @@
-import { encodeFunctionData, formatEther, parseEther, type Abi } from 'viem'
+import { encodeFunctionData, parseEther } from 'viem'
 import { BERACHAIN, SWBERA, WBERA } from './contracts.js'
 
 export interface TxStep {
@@ -14,12 +14,12 @@ function castCmd(
   to: string,
   fn: string,
   args: string[],
-  opts?: { value?: string },
+  opts?: { value?: string; rpcUrl?: string },
 ): string {
   const parts = ['cast send', to, `"${fn}"`]
   parts.push(...args)
   if (opts?.value) parts.push('--value', opts.value)
-  parts.push('--rpc-url', BERACHAIN.rpc)
+  parts.push('--rpc-url', opts?.rpcUrl ?? BERACHAIN.rpc)
   parts.push('--private-key', '$WALLET_PRIVATE_KEY')
   return parts.join(' ')
 }
@@ -27,13 +27,14 @@ function castCmd(
 export function buildDeposit(
   amount: string,
   receiver: string,
-  opts?: { includeApprove?: boolean },
+  opts?: { includeApprove?: boolean; rpcUrl?: string },
 ): TxStep[] {
   const wei = parseEther(amount)
   const weiStr = wei.toString()
 
   const steps: TxStep[] = []
   const includeApprove = opts?.includeApprove ?? true
+  const rpcUrl = opts?.rpcUrl ?? BERACHAIN.rpc
 
   // Step 1: Wrap BERA → WBERA
   const wrapData = encodeFunctionData({
@@ -46,7 +47,7 @@ export function buildDeposit(
     function: 'deposit()',
     calldata: wrapData,
     value: `${amount} ether`,
-    cast: castCmd(WBERA.address, 'deposit()', [], { value: `${amount}ether` }),
+    cast: castCmd(WBERA.address, 'deposit()', [], { value: `${amount}ether`, rpcUrl }),
   })
 
   let step = 2
@@ -65,7 +66,7 @@ export function buildDeposit(
       cast: castCmd(WBERA.address, 'approve(address,uint256)', [
         SWBERA.address,
         weiStr,
-      ]),
+      ], { rpcUrl }),
     })
     step++
   }
@@ -84,17 +85,22 @@ export function buildDeposit(
     cast: castCmd(SWBERA.address, 'deposit(uint256,address)', [
       weiStr,
       receiver,
-    ]),
+    ], { rpcUrl }),
   })
 
   return steps
 }
 
-export function buildRedeem(shares: string, receiver: string): TxStep[] {
+export function buildRedeem(
+  shares: string,
+  receiver: string,
+  opts?: { rpcUrl?: string },
+): TxStep[] {
   const wei = parseEther(shares)
   const weiStr = wei.toString()
 
   const steps: TxStep[] = []
+  const rpcUrl = opts?.rpcUrl ?? BERACHAIN.rpc
 
   // Step 1: Redeem sWBERA → WBERA
   const redeemData = encodeFunctionData({
@@ -111,7 +117,7 @@ export function buildRedeem(shares: string, receiver: string): TxStep[] {
       weiStr,
       receiver,
       receiver,
-    ]),
+    ], { rpcUrl }),
   })
 
   // Step 2: Unwrap WBERA → BERA
@@ -125,7 +131,7 @@ export function buildRedeem(shares: string, receiver: string): TxStep[] {
     calldata: '(depends on step 1 output)',
     cast: castCmd(WBERA.address, 'withdraw(uint256)', [
       '<WBERA_AMOUNT_FROM_STEP_1>',
-    ]),
+    ], { rpcUrl }),
   })
 
   return steps
