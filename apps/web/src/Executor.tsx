@@ -1,5 +1,5 @@
 import { Porto } from 'porto'
-import { formatEther, http } from 'viem'
+import { createPublicClient, formatEther, http } from 'viem'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EarnoWebRequestV1 } from './earnoRequest'
 import { EARNO_DEFAULT_CHAIN, findEarnoChainById } from '@earno/core/chains'
@@ -37,6 +37,22 @@ function weiDecimalToHex(valueWei: string): `0x${string}` {
 
 function shortAddress(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+}
+
+const APPROVE_SELECTOR = '0x095ea7b3'
+const MAX_UINT256 = (1n << 256n) - 1n
+
+function readApproveAmount(data: `0x${string}`): bigint | null {
+  if (!data.startsWith(APPROVE_SELECTOR)) return null
+  const payload = data.slice(2)
+  const expectedLen = 8 + 64 + 64
+  if (payload.length < expectedLen) return null
+  const amountHex = payload.slice(8 + 64, 8 + 64 + 64)
+  try {
+    return BigInt(`0x${amountHex}`)
+  } catch {
+    return null
+  }
 }
 
 function statusLabel(code: number): string {
@@ -98,6 +114,11 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const [txHashes, setTxHashes] = useState<`0x${string}`[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null)
+  const [ackRisks, setAckRisks] = useState(false)
+  const [simulating, setSimulating] = useState(false)
+  const [simulation, setSimulation] = useState<
+    Array<{ label: string; ok: boolean; error?: string }>
+  >([])
 
   const [walletId, setWalletId] = useState<'porto' | 'injected'>('porto')
 
@@ -138,6 +159,37 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
   const senderMismatch =
     request.sender && account ? request.sender.toLowerCase() !== account.toLowerCase() : false
 
+  const allowlistSet = useMemo(() => {
+    const allowlist = request.constraints?.allowlistContracts
+    if (!allowlist || allowlist.length === 0) return null
+    return new Set(allowlist.map((a) => a.toLowerCase()))
+  }, [request.constraints?.allowlistContracts])
+  const allowlistViolations = useMemo(() => {
+    if (!allowlistSet) return []
+    const unique = new Map<string, `0x${string}`>()
+    for (const call of request.calls) {
+      const key = call.to.toLowerCase()
+      if (!allowlistSet.has(key)) unique.set(key, call.to)
+    }
+    return Array.from(unique.values())
+  }, [allowlistSet, request.calls])
+  const unlimitedApproveCalls = useMemo(() => {
+    const labels: string[] = []
+    for (const call of request.calls) {
+      const amount = readApproveAmount(call.data)
+      if (amount === null) continue
+      if (amount === MAX_UINT256) labels.push(call.label)
+    }
+    return labels
+  }, [request.calls])
+
+  const needsRiskAck = !allowlistSet || unlimitedApproveCalls.length > 0
+
+  useEffect(() => {
+    setAckRisks(false)
+    setSimulation([])
+  }, [request])
+
   const connect = useCallback(async () => {
     setError(null)
     setConnecting(true)
@@ -156,6 +208,41 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     }
   }, [provider])
 
+  const simulateCalls = useCallback(async () => {
+    setError(null)
+    setSimulating(true)
+    setSimulation([])
+    try {
+      const client = createPublicClient({
+        transport: http(rpcUrl),
+      })
+
+      const from = (account ?? request.sender ?? undefined) as `0x${string}` | undefined
+
+      const results: Array<{ label: string; ok: boolean; error?: string }> = []
+      for (const call of request.calls) {
+        try {
+          await client.call({
+            ...(from ? { account: from } : {}),
+            to: call.to,
+            data: call.data,
+            ...(call.valueWei ? { value: BigInt(call.valueWei) } : {}),
+          })
+          results.push({ label: call.label, ok: true })
+        } catch (e) {
+          const message = e instanceof Error ? e.message : 'Simulation failed'
+          results.push({ label: call.label, ok: false, error: message })
+        }
+      }
+      setSimulation(results)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Simulation failed'
+      setError(message)
+    } finally {
+      setSimulating(false)
+    }
+  }, [account, provider, request.calls, request.sender, rpcUrl])
+
   const sendCalls = useCallback(async () => {
     setError(null)
     setSending(true)
@@ -163,6 +250,13 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     setBundleId(null)
     setTxHashes(null)
     try {
+      if (allowlistViolations.length > 0) {
+        throw new Error('This request includes calls to contracts outside the allowlist')
+      }
+      if (needsRiskAck && !ackRisks) {
+        throw new Error('Acknowledge the security warnings before executing')
+      }
+
       await ensureWalletOnChain({
         provider,
         chainIdHex,
@@ -239,7 +333,20 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
     } finally {
       setSending(false)
     }
-  }, [account, chainIdHex, chainName, connect, nativeCurrencySymbol, provider, request.calls, request.sender, rpcUrl])
+  }, [
+    account,
+    ackRisks,
+    allowlistViolations.length,
+    chainIdHex,
+    chainName,
+    connect,
+    needsRiskAck,
+    nativeCurrencySymbol,
+    provider,
+    request.calls,
+    request.sender,
+    rpcUrl,
+  ])
 
   const polling = useRef(false)
   useEffect(() => {
@@ -325,13 +432,42 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
           {request.calls.length === 1 ? '' : 's'} ·{' '}
           <span className="text-zinc-200">{formatEther(totalValue)}</span> {nativeCurrencySymbol} total value
         </div>
+        <div className="text-xs text-zinc-500">
+          RPC <span className="font-mono text-zinc-300">{rpcUrl}</span>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-col gap-3">
+        {!allowlistSet ? (
+          <div className="rounded-md border border-amber-900/60 bg-amber-950/30 p-3 text-sm text-amber-200">
+            No contract allowlist provided. Only execute if you trust the source of this link.
+          </div>
+        ) : null}
+
+        {allowlistViolations.length > 0 ? (
+          <div className="rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
+            This request includes calls to contracts outside the allowlist:{' '}
+            <span className="font-mono text-xs">{allowlistViolations.join(', ')}</span>
+          </div>
+        ) : null}
+
+        {unlimitedApproveCalls.length > 0 ? (
+          <div className="rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
+            Unlimited token approval detected ({unlimitedApproveCalls.join(', ')}). Double-check spender + contract.
+          </div>
+        ) : null}
+
         <div className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3 text-xs text-zinc-200">
           <div className="flex flex-col gap-2">
             {request.calls.map((call, i) => (
-              <div key={`${call.to}-${i}`} className="flex flex-col gap-1">
+              <div
+                key={`${call.to}-${i}`}
+                className={`flex flex-col gap-1 rounded-md p-2 ${
+                  allowlistSet && !allowlistSet.has(call.to.toLowerCase())
+                    ? 'border border-red-900/60 bg-red-950/20'
+                    : 'border border-transparent'
+                }`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-medium text-zinc-100">{call.label}</div>
                   <div className="text-zinc-400">{shortAddress(call.to)}</div>
@@ -341,6 +477,15 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
                     ? `${formatEther(BigInt(call.valueWei))} ${nativeCurrencySymbol} value`
                     : `0 ${nativeCurrencySymbol} value`}
                 </div>
+                {call.valueWei && BigInt(call.valueWei) > 0n ? (
+                  <div className="text-amber-300">Native value transfer</div>
+                ) : null}
+                {call.data.startsWith(APPROVE_SELECTOR) ? (
+                  <div className="text-amber-300">Token approval</div>
+                ) : null}
+                {readApproveAmount(call.data) === MAX_UINT256 ? (
+                  <div className="text-red-300">Unlimited approval</div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -382,8 +527,21 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
           </button>
           <button
             type="button"
+            onClick={simulateCalls}
+            disabled={simulating}
+            className="rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-60"
+          >
+            {simulating ? 'Simulating…' : 'Simulate'}
+          </button>
+          <button
+            type="button"
             onClick={sendCalls}
-            disabled={sending || senderMismatch}
+            disabled={
+              sending ||
+              senderMismatch ||
+              allowlistViolations.length > 0 ||
+              (needsRiskAck && !ackRisks)
+            }
             className="rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-emerald-950 disabled:opacity-60"
           >
             {sending ? 'Sending…' : 'Execute'}
@@ -395,9 +553,45 @@ export function Executor({ request }: { request: EarnoWebRequestV1 }) {
           ) : null}
         </div>
 
+        {needsRiskAck && allowlistViolations.length === 0 ? (
+          <label className="flex items-start gap-2 text-sm text-zinc-200">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={ackRisks}
+              onChange={(e) => setAckRisks(e.target.checked)}
+            />
+            <span>I understand the warnings above and want to proceed.</span>
+          </label>
+        ) : null}
+
         {error ? (
           <div className="rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
             {error}
+          </div>
+        ) : null}
+
+        {simulation.length > 0 ? (
+          <div className="rounded-md border border-zinc-800 bg-zinc-950/40 p-3 text-sm text-zinc-200">
+            <div className="text-zinc-400">Preflight simulation</div>
+            <div className="mt-2 flex flex-col gap-2">
+              {simulation.map((r) => (
+                <div key={r.label} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-zinc-100">{r.label}</div>
+                    <div className={r.ok ? 'text-emerald-300' : 'text-red-300'}>
+                      {r.ok ? 'OK' : 'Failed'}
+                    </div>
+                  </div>
+                  {!r.ok && r.error ? (
+                    <div className="break-words font-mono text-xs text-red-200">{r.error}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-xs text-zinc-500">
+              Simulation uses <span className="font-mono">{rpcUrl}</span> and may differ from final execution.
+            </div>
           </div>
         ) : null}
 

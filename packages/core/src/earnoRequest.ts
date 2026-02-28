@@ -15,6 +15,9 @@ export type EarnoWebRequestV1 = {
   sender?: `0x${string}`
   receiver?: `0x${string}`
   calls: EarnoWebCall[]
+  constraints?: {
+    allowlistContracts?: `0x${string}`[]
+  }
   intent?: {
     plugin?: string
     action?: string
@@ -85,6 +88,32 @@ function assertRequestV1(req: unknown): asserts req is EarnoWebRequestV1 {
   if (r.rpcUrl !== undefined && typeof r.rpcUrl !== 'string') throw new Error('Invalid rpcUrl')
   if (r.sender !== undefined && !isAddress(r.sender)) throw new Error('Invalid sender')
   if (r.receiver !== undefined && !isAddress(r.receiver)) throw new Error('Invalid receiver')
+
+  if (r.constraints !== undefined) {
+    if (!r.constraints || typeof r.constraints !== 'object') {
+      throw new Error('Invalid constraints')
+    }
+    const constraints = r.constraints as Partial<
+      NonNullable<EarnoWebRequestV1['constraints']>
+    >
+    if (constraints.allowlistContracts !== undefined) {
+      if (!Array.isArray(constraints.allowlistContracts)) {
+        throw new Error('Invalid allowlistContracts')
+      }
+      for (const addr of constraints.allowlistContracts) {
+        if (!isAddress(addr)) throw new Error('Invalid allowlistContracts address')
+      }
+    }
+  }
+
+  if (r.callback !== undefined) {
+    if (!r.callback || typeof r.callback !== 'object') {
+      throw new Error('Invalid callback')
+    }
+    const cb = r.callback as Partial<NonNullable<EarnoWebRequestV1['callback']>>
+    if (typeof cb.url !== 'string' || !cb.url) throw new Error('Invalid callback url')
+    if (cb.state !== undefined && typeof cb.state !== 'string') throw new Error('Invalid callback state')
+  }
 
   for (const call of r.calls) {
     if (!call || typeof call !== 'object') throw new Error('Invalid call')

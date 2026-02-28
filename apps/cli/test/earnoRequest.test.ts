@@ -37,4 +37,31 @@ describe('earno web request', () => {
     const url = buildEarnoWebUrl('http://localhost:5173', req)
     expect(url).toMatch(/#r=/)
   })
+
+  it('roundtrips constraints + callback', () => {
+    const req2: EarnoWebRequestV1 = {
+      ...req,
+      constraints: {
+        allowlistContracts: ['0x0000000000000000000000000000000000000002'],
+      },
+      callback: {
+        url: 'http://127.0.0.1:0/callback',
+        state: 'test',
+      },
+    }
+    const encoded = encodeEarnoWebRequest(req2)
+    const decoded = decodeEarnoWebRequest(encoded)
+    expect(decoded).toEqual(req2)
+  })
+
+  it('rejects invalid allowlist contracts', () => {
+    const bad = {
+      ...req,
+      constraints: {
+        allowlistContracts: ['0x123'],
+      },
+    }
+    const legacy = Buffer.from(JSON.stringify(bad), 'utf8').toString('base64url')
+    expect(() => decodeEarnoWebRequest(legacy)).toThrow(/allowlistContracts/)
+  })
 })
