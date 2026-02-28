@@ -16,12 +16,16 @@ export const balance = {
     address: z.string().describe('Wallet address to check'),
   }),
   env: z.object({
-    BEARN_RPC: z
+    EARNO_RPC: z
       .string()
       .optional()
       .describe(
         `Berachain RPC URL (default: ${BERACHAIN.rpc})`,
       ),
+    BEARN_RPC: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_RPC'),
   }),
   examples: [
     {
@@ -31,7 +35,7 @@ export const balance = {
   ],
   async run(c: any) {
     const { address } = c.options
-    const rpc = c.env.BEARN_RPC ?? BERACHAIN.rpc
+    const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
 
     const client = createPublicClient({
       chain: { ...berachain, rpcUrls: { default: { http: [rpc] } } },

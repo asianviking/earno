@@ -2,6 +2,7 @@ import { z } from 'incur'
 import { createPublicClient, http, parseEther } from 'viem'
 import { buildDeposit } from '../tx.js'
 import { BERACHAIN, SWBERA, WBERA } from '../contracts.js'
+import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
 
 const berachain = {
   id: BERACHAIN.id,
@@ -26,12 +27,38 @@ export const deposit = {
       .describe(
         'Sender wallet address (defaults to receiver; required for smart approvals when depositing to a different receiver)',
       ),
+    porto: z
+      .boolean()
+      .optional()
+      .describe(
+        'Generate a web link to sign + execute with Porto in the browser',
+      ),
+    webUrl: z
+      .string()
+      .optional()
+      .describe(
+        'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
+      ),
   }),
   env: z.object({
-    BEARN_RPC: z
+    EARNO_RPC: z
       .string()
       .optional()
       .describe(`Berachain RPC URL (default: ${BERACHAIN.rpc})`),
+    BEARN_RPC: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_RPC'),
+    EARNO_WEB_URL: z
+      .string()
+      .optional()
+      .describe(
+        'Web client base URL for --porto links (default: http://localhost:5173)',
+      ),
+    BEARN_WEB_URL: z
+      .string()
+      .optional()
+      .describe('Legacy alias for EARNO_WEB_URL'),
   }),
   examples: [
     {
@@ -44,7 +71,13 @@ export const deposit = {
     const { amount } = c.args
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     const sender = c.options.sender ?? receiver
-    const rpc = c.env.BEARN_RPC ?? BERACHAIN.rpc
+    const rpc = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+    const wantPorto = c.options.porto ?? false
+    const webUrl =
+      c.options.webUrl ??
+      c.env.EARNO_WEB_URL ??
+      c.env.BEARN_WEB_URL ??
+      'http://localhost:5173'
 
     if (receiver === '0xYOUR_ADDRESS') {
       return c.error({
@@ -86,12 +119,41 @@ export const deposit = {
 
     const steps = buildDeposit(amount, receiver, { includeApprove })
 
+    let portoLink: string | undefined
+    if (wantPorto) {
+      try {
+        const req: EarnoWebRequestV1 = {
+          v: 1,
+          title: 'Deposit BERA → sWBERA',
+          chainId: BERACHAIN.id,
+          rpcUrl: rpc,
+          sender: sender as `0x${string}`,
+          receiver: receiver as `0x${string}`,
+          calls: steps.map((s) => ({
+            label: s.label,
+            to: s.to as `0x${string}`,
+            data: s.calldata as `0x${string}`,
+            ...(s.value ? { valueWei: wei.toString() } : {}),
+          })),
+        }
+        portoLink = buildEarnoWebUrl(webUrl, req)
+      } catch {
+        return c.error({
+          code: 'INVALID_WEB_URL',
+          message:
+            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like http://localhost:5173',
+          retryable: true,
+        })
+      }
+    }
+
     return c.ok(
       {
         strategy: 'BERA → sWBERA',
         amount: `${amount} BERA`,
         sender,
         receiver,
+        ...(portoLink ? { portoLink } : {}),
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,

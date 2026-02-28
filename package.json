@@ -1,24 +1,24 @@
 {
-  "name": "bearn",
+  "name": "earno",
   "version": "0.1.0",
   "description": "Berachain yield CLI — earn from your terminal",
   "type": "module",
   "bin": {
-    "bearn": "./dist/cli.js"
+    "earno": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "dev": "node --import tsx src/cli.ts",
-    "dev:web": "pnpm --filter bearn-web dev",
+    "dev:web": "pnpm --filter earno-web dev",
     "build": "tsc",
-    "build:web": "pnpm --filter bearn-web build",
+    "build:web": "pnpm --filter earno-web build",
     "prepack": "npm run build",
-    "bearn": "node --import tsx src/cli.ts",
+    "earno": "node --import tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview:web": "pnpm --filter bearn-web preview"
+    "preview:web": "pnpm --filter earno-web preview"
   },
   "keywords": [
     "berachain",
