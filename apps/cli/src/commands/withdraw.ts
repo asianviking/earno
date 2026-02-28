@@ -1,6 +1,6 @@
 import { z } from 'incur'
 import { buildRedeem } from '../tx.js'
-import { BERACHAIN } from '../contracts.js'
+import { BERACHAIN, SWBERA } from '../contracts.js'
 import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
 import { resolveCliChain } from '../chain.js'
 import { startEarnoCallbackServer } from '../callback-server.js'
@@ -177,6 +177,9 @@ export const withdraw = {
           rpcUrl,
           sender: receiver as `0x${string}`,
           receiver: receiver as `0x${string}`,
+          constraints: {
+            allowlistContracts: [SWBERA.address],
+          },
           intent: {
             plugin: 'earno',
             action: 'withdraw',

@@ -207,6 +207,9 @@ export const deposit = {
           rpcUrl,
           sender: sender as `0x${string}`,
           receiver: receiver as `0x${string}`,
+          constraints: {
+            allowlistContracts: [WBERA.address, SWBERA.address],
+          },
           intent: {
             plugin: 'earno',
             action: 'deposit',
