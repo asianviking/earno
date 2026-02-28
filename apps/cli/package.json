@@ -1,7 +1,7 @@
 {
   "name": "earno",
   "version": "0.1.0",
-  "description": "Berachain yield CLI — earn from your terminal",
+  "description": "EVM intent CLI — build + execute transaction bundles",
   "type": "module",
   "repository": {
     "type": "git",
@@ -26,9 +26,11 @@
     "test:watch": "vitest"
   },
   "keywords": [
-    "berachain",
+    "evm",
+    "intents",
+    "transactions",
     "defi",
-    "yield",
+    "berachain",
     "cli"
   ],
   "author": "",

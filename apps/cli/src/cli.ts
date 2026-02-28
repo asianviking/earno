@@ -7,7 +7,7 @@ import { pluginCli } from './plugin-cli.js'
 import { loadConfiguredPlugins } from './plugins.js'
 
 const cli = Cli.create('earno', {
-  description: 'Berachain yield CLI — earn from your terminal',
+  description: 'EVM intent CLI — build + execute transaction bundles',
   version: '0.1.0',
 })
   .command('deposit', deposit)

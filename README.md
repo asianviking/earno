@@ -1,8 +1,10 @@
 # earno
 
-Berachain yield CLI — earn from your terminal.
+EVM intent CLI + web executor for transaction bundles (any EVM chain; Berachain default).
 
-Builds transaction calldata for Berachain yield strategies and outputs ready-to-paste `cast` commands. Works for humans and AI agents.
+earno generates a portable request object (`calls`, optional `intent` + constraints) that you can:
+- execute in the browser executor (Porto or injected wallets)
+- or run manually (earno prints `cast` commands when possible)
 
 Built with [incur](https://github.com/wevm/incur) + [viem](https://github.com/wevm/viem).
 
@@ -26,62 +28,42 @@ After either method, `earno` is available everywhere:
 earno --help
 ```
 
-## Plugins
+## Quickstart (web executor)
 
-earno supports strategy plugins as nested command groups (e.g. `earno bend deposit ...`).
-
-```sh
-# Add a plugin spec to your local config (does not install it)
-earno plugin add @ayvee/bend
-
-# Or load plugins ad-hoc for a single run
-EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress --web
-```
-
-### Deposit BERA into sWBERA
-
-```sh
-earno deposit 1.5 --receiver 0xYourAddress
-```
-
-Outputs three `cast send` commands to execute in order:
-1. **Wrap** BERA → WBERA
-2. **Approve** WBERA for sWBERA
-3. **Deposit** WBERA → sWBERA
-
-### Sign + execute (browser)
-
-Start the executor UI:
+Start the executor UI locally:
 
 ```sh
 pnpm dev:web
 ```
 
-Generate a web link from the CLI:
-
-```sh
-earno deposit 1.5 --receiver 0xYourAddress --web
-```
-
-Open the returned `executorUrl` (or legacy `portoLink`), pick a wallet (Porto or injected), and execute.
-
-To close the loop and have the browser send the tx hash back to your terminal:
+Generate a link from the CLI and sign/execute in the browser:
 
 ```sh
 earno deposit 1.5 --receiver 0xYourAddress --web --wait
 ```
 
-### Deploy the web executor (Vercel)
-
-1. Import the repo in Vercel and set **Root Directory** to the repo root (`.`).
-2. Deploy (the repo includes `vercel.json` configured to build `apps/web`).
-3. Point the CLI at your deployed URL:
+To point the CLI at a deployed executor (e.g. Vercel):
 
 ```sh
 EARNO_WEB_URL=https://your-app.vercel.app earno deposit 1.0 --receiver 0xYourAddress --web
 ```
 
-### Check balance
+## Built-in strategies (Berachain)
+
+These commands are currently **Berachain mainnet only** and target the sWBERA vault.
+
+### Deposit BERA → sWBERA
+
+```sh
+earno deposit 1.5 --receiver 0xYourAddress
+```
+
+Outputs `cast send` commands for the underlying steps:
+1. **Wrap** BERA → WBERA
+2. **Approve** WBERA for sWBERA (skipped if already approved)
+3. **Deposit** WBERA → sWBERA
+
+### Check sWBERA balance
 
 ```sh
 earno balance --address 0xYourAddress
@@ -93,7 +75,7 @@ Queries sWBERA on-chain and shows:
 - Current exchange rate
 - Total vault assets
 
-### Withdraw sWBERA back to BERA
+### Withdraw sWBERA → BERA
 
 ```sh
 earno withdraw 1.0 --receiver 0xYourAddress
@@ -102,6 +84,18 @@ earno withdraw 1.0 --receiver 0xYourAddress
 Outputs `cast send` commands to:
 1. **Redeem** sWBERA → WBERA
 2. **Unwrap** WBERA → native BERA
+
+## Plugins
+
+earno supports strategy plugins as nested command groups (e.g. `earno bend deposit ...`).
+
+```sh
+# Add a plugin spec to your local config (does not install it)
+earno plugin add @ayvee/bend
+
+# Or load plugins ad-hoc for a single run
+EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress --web
+```
 
 ## Output formats
 
@@ -135,12 +129,12 @@ earno --llms
 | `EARNO_CHAIN` | Default chain key/chainId | `berachain` |
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
 | `EARNO_WEB_URL` | Base URL for `--web` executor links | `http://localhost:5173` |
-| `BEARN_CHAIN` | Legacy alias for `EARNO_CHAIN` | — |
-| `BEARN_RPC` | Legacy alias for `EARNO_RPC` | — |
-| `BEARN_WEB_URL` | Legacy alias for `EARNO_WEB_URL` | — |
+| `EARNO_PLUGINS` | Comma-separated plugin import specs | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 
 ## Contracts
+
+Built-in Berachain sWBERA strategy contracts:
 
 | Contract | Address |
 |----------|---------|

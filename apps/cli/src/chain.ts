@@ -26,13 +26,10 @@ export function resolveCliChain(args: {
   rpcUrl?: string
   env?: {
     EARNO_CHAIN?: string
-    BEARN_CHAIN?: string
     EARNO_RPC?: string
-    BEARN_RPC?: string
   }
 }): ResolvedCliChain {
-  const envChain = args.env?.EARNO_CHAIN ?? args.env?.BEARN_CHAIN
-  const selector = args.chain ?? envChain
+  const selector = args.chain ?? args.env?.EARNO_CHAIN
 
   let chain: EarnoChain | undefined
   if (!selector) {
@@ -58,7 +55,6 @@ export function resolveCliChain(args: {
   const rpcUrl =
     args.rpcUrl ??
     args.env?.EARNO_RPC ??
-    args.env?.BEARN_RPC ??
     chain.rpcUrls[0]
 
   if (!rpcUrl) {
@@ -69,4 +65,3 @@ export function resolveCliChain(args: {
 
   return { chain, rpcUrl }
 }
-

@@ -60,28 +60,16 @@ export const withdraw = {
       .string()
       .optional()
       .describe('Default chain key/chainId (default: berachain)'),
-    BEARN_CHAIN: z
-      .string()
-      .optional()
-      .describe('Legacy alias for EARNO_CHAIN'),
     EARNO_RPC: z
       .string()
       .optional()
       .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
-    BEARN_RPC: z
-      .string()
-      .optional()
-      .describe('Legacy alias for EARNO_RPC'),
     EARNO_WEB_URL: z
       .string()
       .optional()
       .describe(
         'Web client base URL for --web links (default: http://localhost:5173)',
       ),
-    BEARN_WEB_URL: z
-      .string()
-      .optional()
-      .describe('Legacy alias for EARNO_WEB_URL'),
   }),
   examples: [
     {
@@ -94,14 +82,13 @@ export const withdraw = {
     const { shares } = c.args
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     let chainId = BERACHAIN.id
-    let rpcUrl = c.env.EARNO_RPC ?? c.env.BEARN_RPC ?? BERACHAIN.rpc
+    let rpcUrl = c.env.EARNO_RPC ?? BERACHAIN.rpc
     const wantWeb = c.options.web ?? c.options.porto ?? false
     const wantWait = c.options.wait ?? false
     const waitTimeoutSec = c.options.waitTimeoutSec ?? 300
     const webUrl =
       c.options.webUrl ??
       c.env.EARNO_WEB_URL ??
-      c.env.BEARN_WEB_URL ??
       'http://localhost:5173'
 
     if (wantWait && !wantWeb) {
