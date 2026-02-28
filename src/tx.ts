@@ -24,11 +24,16 @@ function castCmd(
   return parts.join(' ')
 }
 
-export function buildDeposit(amount: string, receiver: string): TxStep[] {
+export function buildDeposit(
+  amount: string,
+  receiver: string,
+  opts?: { includeApprove?: boolean },
+): TxStep[] {
   const wei = parseEther(amount)
   const weiStr = wei.toString()
 
   const steps: TxStep[] = []
+  const includeApprove = opts?.includeApprove ?? true
 
   // Step 1: Wrap BERA → WBERA
   const wrapData = encodeFunctionData({
@@ -44,31 +49,35 @@ export function buildDeposit(amount: string, receiver: string): TxStep[] {
     cast: castCmd(WBERA.address, 'deposit()', [], { value: `${amount}ether` }),
   })
 
-  // Step 2: Approve WBERA for sWBERA
-  const approveData = encodeFunctionData({
-    abi: WBERA.abi,
-    functionName: 'approve',
-    args: [SWBERA.address, wei],
-  })
-  steps.push({
-    label: '2. Approve WBERA for sWBERA',
-    to: WBERA.address,
-    function: `approve(address,uint256)`,
-    calldata: approveData,
-    cast: castCmd(WBERA.address, 'approve(address,uint256)', [
-      SWBERA.address,
-      weiStr,
-    ]),
-  })
+  let step = 2
+  if (includeApprove) {
+    // Step 2: Approve WBERA for sWBERA
+    const approveData = encodeFunctionData({
+      abi: WBERA.abi,
+      functionName: 'approve',
+      args: [SWBERA.address, wei],
+    })
+    steps.push({
+      label: `${step}. Approve WBERA for sWBERA`,
+      to: WBERA.address,
+      function: `approve(address,uint256)`,
+      calldata: approveData,
+      cast: castCmd(WBERA.address, 'approve(address,uint256)', [
+        SWBERA.address,
+        weiStr,
+      ]),
+    })
+    step++
+  }
 
-  // Step 3: Deposit WBERA into sWBERA
+  // Deposit WBERA into sWBERA
   const depositData = encodeFunctionData({
     abi: SWBERA.abi,
     functionName: 'deposit',
     args: [wei, receiver as `0x${string}`],
   })
   steps.push({
-    label: '3. Deposit WBERA → sWBERA',
+    label: `${step}. Deposit WBERA → sWBERA`,
     to: SWBERA.address,
     function: `deposit(uint256,address)`,
     calldata: depositData,
