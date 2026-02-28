@@ -1,0 +1,27 @@
+{
+  "name": "bearn",
+  "version": "0.1.0",
+  "description": "Berachain yield CLI — earn from your terminal",
+  "type": "module",
+  "bin": {
+    "bearn": "./dist/cli.js"
+  },
+  "scripts": {
+    "dev": "node --import tsx src/cli.ts",
+    "build": "tsc",
+    "bearn": "node --import tsx src/cli.ts"
+  },
+  "keywords": ["berachain", "defi", "yield", "cli"],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.29.2",
+  "dependencies": {
+    "incur": "^0.1.7",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
