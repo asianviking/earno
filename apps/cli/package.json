@@ -1,6 +1,6 @@
 {
   "name": "@earno/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "EVM intent CLI — build + execute transaction bundles",
   "type": "module",
   "repository": {
@@ -40,12 +40,12 @@
   "license": "MIT",
   "packageManager": "pnpm@10.29.2",
   "dependencies": {
-    "@earno/core": "workspace:^",
+    "@earno/core": "^0.1.1",
     "incur": "^0.1.7",
     "viem": "^2.46.3"
   },
   "devDependencies": {
-    "@earno/plugin-example": "workspace:^",
+    "@earno/plugin-example": "^0.1.1",
     "@types/node": "^25.3.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

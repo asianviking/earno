@@ -1,6 +1,6 @@
 {
   "name": "@earno/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared core types + request transport for earno",
   "type": "module",
   "repository": {
