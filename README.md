@@ -73,8 +73,8 @@ earno deposit 1.5 --receiver 0xYourAddress --web --wait
 
 ### Deploy the web executor (Vercel)
 
-1. Import the repo in Vercel and set **Root Directory** to `apps/web`.
-2. Deploy (the repo includes `apps/web/vercel.json`).
+1. Import the repo in Vercel and set **Root Directory** to the repo root (`.`).
+2. Deploy (the repo includes `vercel.json` configured to build `apps/web`).
 3. Point the CLI at your deployed URL:
 
 ```sh
