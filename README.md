@@ -37,6 +37,22 @@ Outputs three `cast send` commands to execute in order:
 2. **Approve** WBERA for sWBERA
 3. **Deposit** WBERA → sWBERA
 
+### Sign + execute with Porto (browser)
+
+Start the executor UI:
+
+```sh
+pnpm dev:web
+```
+
+Generate a Porto link from the CLI:
+
+```sh
+bearn deposit 1.5 --receiver 0xYourAddress --porto
+```
+
+Open the returned `portoLink`, connect in Porto, and execute the batched calls.
+
 ### Check balance
 
 ```sh
