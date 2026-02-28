@@ -89,6 +89,7 @@ bearn --llms
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `BEARN_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
+| `BEARN_WEB_URL` | Base URL for `--porto` links | `http://localhost:5173` |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 
 ## Contracts
