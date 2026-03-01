@@ -98,7 +98,7 @@ earno swap 0.1 --from native --to USDC --chain berachain --to-chain berachain --
 
 earno supports strategy plugins as nested command groups (e.g. `earno bera deposit ...`).
 
-### Berachain (sWBERA)
+### Berachain
 
 Berachain commands live in an **opt-in** plugin:
 
@@ -109,16 +109,6 @@ earno plugin add @earno/plugin-berachain
 earno bera deposit 1.0 --receiver 0xYourAddress
 earno bera balance --address 0xYourAddress
 earno bera withdraw 1.0 --receiver 0xYourAddress
-```
-
-### Other plugins
-
-```sh
-# Add a plugin spec to your local config (does not install it)
-earno plugin add @ayvee/bend
-
-# Or load plugins ad-hoc for a single run
-EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress
 ```
 
 ## Output formats
