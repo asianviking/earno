@@ -1,0 +1,33 @@
+# Action request
+
+An **action request** is the portable object earno generates in the CLI and the web executor consumes.
+
+Minimum executable payload:
+
+- `v` — schema version
+- `title` — user-facing label
+- `chainId` — EVM chain id
+- `rpcUrl?` — optional RPC override (executor should display it)
+- `sender?` — expected sender (executor should enforce/verify)
+- `calls` — array of `{ label?, to, data, valueWei? }`
+
+Example:
+
+```json
+{
+  "v": 1,
+  "title": "Send 0.01 ETH",
+  "chainId": 1,
+  "sender": "0xYourAddress",
+  "calls": [
+    {
+      "label": "Transfer",
+      "to": "0xRecipient",
+      "data": "0x",
+      "valueWei": "10000000000000000"
+    }
+  ]
+}
+```
+
+Optional (forward-compatible) fields may include provenance/UX (`intent`) and execution constraints (e.g. `deadline`, `slippageBps`).

@@ -1,0 +1,24 @@
+# Quickstart
+
+## Install
+
+```sh
+npm i -g @earno/cli
+```
+
+## Generate an execution link
+
+```sh
+earno send 0.01 --to 0xYourAddress
+```
+
+earno prints an executor URL (defaults to `https://earno.sh`). Open it in your browser, connect a wallet, review the calls, then execute.
+
+## Run the web executor locally
+
+From the repo root:
+
+```sh
+pnpm dev:web
+EARNO_WEB_URL=http://localhost:5173 earno send 0.01 --to 0xYourAddress
+```

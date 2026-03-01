@@ -1,0 +1,16 @@
+# Web executor
+
+The executor is a web UI that:
+
+1. Decodes an action request from the URL
+2. Displays the chain + calls for review
+3. Sends transactions via a wallet (Porto or injected/EIP-1193)
+
+## Batching
+
+When supported by the wallet/provider, the executor should prefer batched sending (`wallet_sendCalls`) and fall back to sequential `eth_sendTransaction` for compatibility.
+
+## Safety notes
+
+- The executor should execute only the request’s `calls` (not plugin/strategy code).
+- Always review the destination addresses and calldata when executing a link.

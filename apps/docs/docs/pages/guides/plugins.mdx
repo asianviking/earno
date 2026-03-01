@@ -1,0 +1,26 @@
+# Plugins
+
+earno supports **strategy plugins** as nested command groups (for example: `earno bera deposit ...`).
+
+## Enable a bundled plugin
+
+The Berachain plugin ships with `@earno/cli`, but is opt-in:
+
+```sh
+earno plugin add @earno/plugin-berachain
+earno bera --help
+```
+
+## Add an external plugin spec
+
+`earno plugin add` updates your local config — it does not install packages globally:
+
+```sh
+earno plugin add @ayvee/bend
+```
+
+## Load ad-hoc for a single run
+
+```sh
+EARNO_PLUGINS=@earno/plugin-example earno example --help
+```
