@@ -1,11 +1,23 @@
 import { z } from 'incur'
-import { createPublicClient, formatEther, http } from 'viem'
-import { BERACHAIN, SWBERA } from '../contracts.js'
+import { createPublicClient, formatEther, formatUnits, http, erc20Abi } from 'viem'
+import {
+  BGT,
+  BERA_CHEF,
+  BERACHAIN,
+  HONEY,
+  RE7_HONEY_VAULT,
+  REWARD_VAULT,
+  REWARD_VAULT_FACTORY,
+  SWBERA,
+  USDC_E,
+  USDT0,
+} from '../contracts.js'
 import { formatSwberaBalanceSummary } from '../balance-format.js'
 import { resolveCliChain } from '../chain.js'
 
 export const balance = {
-  description: 'Check sWBERA balance and underlying BERA value',
+  description:
+    'Check Berachain balances (BERA, sWBERA, HONEY, USDT0, USDC.e, BGT) and pending BGT',
   options: z.object({
     address: z.string().describe('Wallet address to check'),
     chain: z
@@ -74,24 +86,52 @@ export const balance = {
       transport: http(rpcUrl),
     })
 
-    const [shares, totalAssets, totalSupply] = await Promise.all([
-      client.readContract({
-        address: SWBERA.address,
-        abi: SWBERA.abi,
-        functionName: 'balanceOf',
-        args: [address as `0x${string}`],
-      }) as Promise<bigint>,
-      client.readContract({
-        address: SWBERA.address,
-        abi: SWBERA.abi,
-        functionName: 'totalAssets',
-      }) as Promise<bigint>,
-      client.readContract({
-        address: SWBERA.address,
-        abi: SWBERA.abi,
-        functionName: 'totalSupply',
-      }) as Promise<bigint>,
-    ])
+    const wallet = address as `0x${string}`
+
+    const [beraBalanceWei, shares, totalAssets, totalSupply, honeyBal, usdtBal, usdcBal, bgtBal] =
+      await Promise.all([
+        client.getBalance({ address: wallet }),
+        client.readContract({
+          address: SWBERA.address,
+          abi: SWBERA.abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }) as Promise<bigint>,
+        client.readContract({
+          address: SWBERA.address,
+          abi: SWBERA.abi,
+          functionName: 'totalAssets',
+        }) as Promise<bigint>,
+        client.readContract({
+          address: SWBERA.address,
+          abi: SWBERA.abi,
+          functionName: 'totalSupply',
+        }) as Promise<bigint>,
+        client.readContract({
+          address: HONEY.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }) as Promise<bigint>,
+        client.readContract({
+          address: USDT0.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }) as Promise<bigint>,
+        client.readContract({
+          address: USDC_E.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }) as Promise<bigint>,
+        client.readContract({
+          address: BGT.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet],
+        }) as Promise<bigint>,
+      ])
 
     let underlyingBera = 0n
     if (shares > 0n) {
@@ -103,33 +143,95 @@ export const balance = {
       })) as bigint
     }
 
+    let pendingBgt: bigint | null = null
+    let re7StakedShares: bigint | null = null
+    try {
+      const factoryAddr = (await client.readContract({
+        address: BERA_CHEF.address,
+        abi: BERA_CHEF.abi,
+        functionName: 'factory',
+      })) as `0x${string}`
+
+      const rewardVaultAddr = (await client.readContract({
+        address: factoryAddr,
+        abi: REWARD_VAULT_FACTORY.abi,
+        functionName: 'getVault',
+        args: [RE7_HONEY_VAULT.address],
+      })) as `0x${string}`
+
+      if (rewardVaultAddr && rewardVaultAddr !== '0x0000000000000000000000000000000000000000') {
+        ;[pendingBgt, re7StakedShares] = (await Promise.all([
+          client.readContract({
+            address: rewardVaultAddr,
+            abi: REWARD_VAULT.abi,
+            functionName: 'earned',
+            args: [wallet],
+          }) as Promise<bigint>,
+          client.readContract({
+            address: rewardVaultAddr,
+            abi: REWARD_VAULT.abi,
+            functionName: 'balanceOf',
+            args: [wallet],
+          }) as Promise<bigint>,
+        ])) as [bigint, bigint]
+      }
+    } catch {
+      pendingBgt = null
+      re7StakedShares = null
+    }
+
+    const swbera = formatSwberaBalanceSummary({
+      address,
+      shares,
+      underlyingBera,
+      totalAssets,
+      totalSupply,
+    })
+
+    const ctaCommands: Array<{ command: string; description: string }> = []
+    if (shares > 0n) {
+      ctaCommands.push({
+        command: `bera withdraw ${formatEther(shares)} --from swbera --receiver ${address}`,
+        description: 'Withdraw your sWBERA',
+      })
+    } else {
+      ctaCommands.push(
+        {
+          command: `bera deposit 1.0 --into swbera --receiver ${address}`,
+          description: 'Deposit BERA into sWBERA',
+        },
+        {
+          command: `bera deposit 1.0 --into honey --receiver ${address} --sender ${address}`,
+          description: 'Deposit HONEY into Bend (auto-stake for BGT)',
+        },
+      )
+    }
+
+    if (pendingBgt !== null && pendingBgt > 0n) {
+      ctaCommands.push({
+        command: `bera claim --sender ${address}`,
+        description: 'Claim your pending BGT',
+      })
+    }
+
     return c.ok(
-      formatSwberaBalanceSummary({
-        address,
-        shares,
-        underlyingBera,
-        totalAssets,
-        totalSupply,
-      }),
+      {
+        ...swbera,
+        BERA: formatEther(beraBalanceWei),
+        HONEY: formatUnits(honeyBal, HONEY.decimals),
+        USDT0: formatUnits(usdtBal, USDT0.decimals),
+        'USDC.e': formatUnits(usdcBal, USDC_E.decimals),
+        BGT: formatUnits(bgtBal, BGT.decimals),
+        ...(pendingBgt !== null ? { pendingBGT: formatEther(pendingBgt) } : {}),
+        ...(re7StakedShares !== null
+          ? { re7HoneyVaultSharesStaked: formatEther(re7StakedShares) }
+          : {}),
+      },
       {
         cta: {
-          commands:
-            shares > 0n
-              ? [
-                  {
-                    command: `bera withdraw ${formatEther(shares)} --receiver ${address}`,
-                    description: 'Withdraw your sWBERA',
-                  },
-                ]
-              : [
-                  {
-                    command: `bera deposit 1.0 --receiver ${address}`,
-                    description: 'Deposit BERA into sWBERA',
-                  },
-                ],
+          commands: ctaCommands,
         },
       },
     )
   },
 }
-
