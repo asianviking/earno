@@ -71,7 +71,7 @@ const example = Cli.create('example', {
     chain: z
       .string()
       .optional()
-      .describe('Chain key or chainId (default: berachain)'),
+      .describe('Chain key or chainId (default: ethereum)'),
     rpc: z
       .string()
       .optional()
@@ -81,7 +81,7 @@ const example = Cli.create('example', {
     EARNO_CHAIN: z
       .string()
       .optional()
-      .describe('Default chain key/chainId (default: berachain)'),
+      .describe('Default chain key/chainId (default: ethereum)'),
     EARNO_RPC: z
       .string()
       .optional()

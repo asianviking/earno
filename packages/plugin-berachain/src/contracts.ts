@@ -119,14 +119,15 @@ export const SWBERA = {
       type: 'function',
       stateMutability: 'view',
       inputs: [],
-      outputs: [{ name: '', type: 'uint256' }],
+      outputs: [{ name: 'assets', type: 'uint256' }],
     },
     {
       name: 'totalSupply',
       type: 'function',
       stateMutability: 'view',
       inputs: [],
-      outputs: [{ name: '', type: 'uint256' }],
+      outputs: [{ name: 'assets', type: 'uint256' }],
     },
   ] satisfies Abi,
 }
+

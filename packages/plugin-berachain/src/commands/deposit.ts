@@ -2,7 +2,7 @@ import { z } from 'incur'
 import { createPublicClient, http, parseEther } from 'viem'
 import { buildDeposit } from '../tx.js'
 import { BERACHAIN, SWBERA, WBERA } from '../contracts.js'
-import { buildExecutorUrl, type EarnoWebRequestV1 } from '../porto-link.js'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '@earno/core/earnoRequest'
 import { resolveCliChain } from '../chain.js'
 import { startEarnoCallbackServer } from '../callback-server.js'
 
@@ -75,7 +75,7 @@ export const deposit = {
         cta: {
           commands: [
             {
-              command: `deposit ${amount} --receiver 0xYourWalletAddress`,
+              command: `bera deposit ${amount} --receiver 0xYourWalletAddress`,
               description: 'Deposit with your address',
             },
           ],
@@ -102,7 +102,7 @@ export const deposit = {
     if (chainId !== BERACHAIN.id) {
       return c.error({
         code: 'UNSUPPORTED_CHAIN',
-        message: `deposit is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        message: `deposit is Berachain-only (chainId ${BERACHAIN.id})`,
         retryable: true,
       })
     }
@@ -137,7 +137,14 @@ export const deposit = {
 
     const steps = buildDeposit(amount, receiver, { includeApprove, rpcUrl })
 
-    let callbackWait: Promise<{ txHash?: `0x${string}`; txHashes?: `0x${string}`[]; bundleId?: `0x${string}`; status?: string }> | undefined
+    let callbackWait:
+      | Promise<{
+          txHash?: `0x${string}`
+          txHashes?: `0x${string}`[]
+          bundleId?: `0x${string}`
+          status?: string
+        }>
+      | undefined
     let closeCallback: (() => Promise<void>) | undefined
     let callback: { url: string; state: string } | undefined
 
@@ -158,7 +165,7 @@ export const deposit = {
         allowlistContracts: [WBERA.address, SWBERA.address],
       },
       intent: {
-        plugin: 'earno',
+        plugin: '@earno/plugin-berachain',
         action: 'deposit',
         params: { amount, sender, receiver, chainId, rpcUrl },
         display: { strategy: 'BERA → sWBERA' },
@@ -174,9 +181,11 @@ export const deposit = {
 
     const executorUrl = buildExecutorUrl(webUrl, req)
 
-    if (wantWait && callbackWait && closeCallback) {
+    if (wantWait && executorUrl && callbackWait && closeCallback) {
       if (!c.agent) {
-        console.error(`Open in browser:\n${executorUrl}\n\nWaiting for callback…`)
+        console.error(
+          `Open in browser:\n${executorUrl}\n\nWaiting for callback…`,
+        )
       }
 
       try {
@@ -213,7 +222,8 @@ export const deposit = {
           },
         )
       } catch (e) {
-        const message = e instanceof Error ? e.message : 'Failed waiting for callback'
+        const message =
+          e instanceof Error ? e.message : 'Failed waiting for callback'
         return c.error({
           code: 'WAIT_FAILED',
           message,
@@ -246,7 +256,7 @@ export const deposit = {
         cta: {
           commands: [
             {
-              command: `balance --address ${receiver}`,
+              command: `bera balance --address ${receiver}`,
               description: 'Check your sWBERA balance after deposit',
             },
           ],

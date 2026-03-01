@@ -28,3 +28,4 @@ export function formatSwberaBalanceSummary(args: {
     totalVaultAssets: `${formatEther(totalAssets)} WBERA`,
   }
 }
+

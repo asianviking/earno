@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import { Cli, Errors, z } from 'incur'
-import { deposit } from './commands/deposit.js'
-import { balance } from './commands/balance.js'
-import { withdraw } from './commands/withdraw.js'
+import { send } from './commands/send.js'
+import { swap } from './commands/swap.js'
 import { pluginCli } from './plugin-cli.js'
 import { loadConfiguredPlugins } from './plugins.js'
 
@@ -85,9 +84,8 @@ const cli = Cli.create('earno', {
     c.set('webUrl', url.toString())
     await next()
   })
-  .command('deposit', deposit)
-  .command('balance', balance)
-  .command('withdraw', withdraw)
+  .command('send', send)
+  .command('swap', swap)
   .command(pluginCli)
 
 const { loaded, failed } = await loadConfiguredPlugins()

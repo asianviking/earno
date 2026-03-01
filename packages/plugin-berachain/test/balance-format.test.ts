@@ -33,3 +33,4 @@ describe('balance formatting', () => {
     expect(out.exchangeRate).toBe('1 sWBERA = 1.0000 BERA')
   })
 })
+

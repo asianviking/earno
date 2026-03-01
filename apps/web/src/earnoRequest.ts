@@ -1,4 +1,8 @@
-export type { EarnoWebRequestV1 } from '@earno/core/earnoRequest'
+export type {
+  EarnoWebRequest,
+  EarnoWebRequestV1,
+  EarnoWebRequestV2,
+} from '@earno/core/earnoRequest'
 export { decodeEarnoWebRequest } from '@earno/core/earnoRequest'
 
 export function readRequestFromLocation(): string | null {

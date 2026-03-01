@@ -13,6 +13,9 @@ importers:
       '@earno/core':
         specifier: ^0.1.1
         version: link:../../packages/core
+      '@earno/plugin-berachain':
+        specifier: ^0.1.1
+        version: link:../../packages/plugin-berachain
       incur:
         specifier: ^0.1.7
         version: 0.1.7
@@ -112,6 +115,28 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/plugin-berachain:
+    dependencies:
+      '@earno/core':
+        specifier: ^0.1.1
+        version: link:../core
+      incur:
+        specifier: ^0.1.7
+        version: 0.1.7
+      viem:
+        specifier: ^2.46.3
+        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.3.2
+        version: 25.3.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.3.2)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/plugin-example:
     dependencies:
