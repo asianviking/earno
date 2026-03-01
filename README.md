@@ -57,6 +57,20 @@ EARNO_WEB_URL=https://your-app.vercel.app earno send 0.01 --to 0xYourAddress
 
 ## Default commands
 
+### Balance
+
+Check native + stablecoin balances across all configured chains:
+
+```sh
+earno balance --address 0xYourAddress
+```
+
+Query a single chain:
+
+```sh
+earno balance --address 0xYourAddress --chain base
+```
+
 ### Send
 
 ```sh

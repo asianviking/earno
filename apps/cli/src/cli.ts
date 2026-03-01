@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Cli, Errors, z } from 'incur'
+import { balance } from './commands/balance.js'
 import { send } from './commands/send.js'
 import { swap } from './commands/swap.js'
 import { pluginCli } from './plugin-cli.js'
@@ -84,6 +85,7 @@ const cli = Cli.create('earno', {
     c.set('webUrl', url.toString())
     await next()
   })
+  .command('balance', balance)
   .command('send', send)
   .command('swap', swap)
   .command(pluginCli)
