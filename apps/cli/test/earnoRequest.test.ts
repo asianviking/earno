@@ -34,7 +34,7 @@ describe('earno web request', () => {
   })
 
   it('builds fragment URL by default', () => {
-    const url = buildEarnoWebUrl('http://localhost:5173', req)
+    const url = buildEarnoWebUrl('https://earno.sh', req)
     expect(url).toMatch(/#r=/)
   })
 
