@@ -178,3 +178,11 @@ export function buildEarnoWebUrl(
   url.hash = `r=${encoded}`
   return url.toString()
 }
+
+export function buildExecutorUrl(
+  baseUrl: string,
+  req: Omit<EarnoWebRequestV1, 'v'>,
+  opts?: { mode?: EarnoWebUrlMode; compress?: boolean },
+): string {
+  return buildEarnoWebUrl(baseUrl, { v: 1, ...req }, opts)
+}

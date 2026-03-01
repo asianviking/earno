@@ -49,11 +49,12 @@ function App() {
               Waiting for an intent
             </div>
             <div className="mt-1 text-sm text-zinc-400">
-              Run a strategy with <code className="text-zinc-200">--porto</code>{' '}
-              and open the returned <code className="text-zinc-200">portoLink</code>.
+              Run a strategy and open the returned{' '}
+              <code className="text-zinc-200">executorUrl</code> (or{' '}
+              <code className="text-zinc-200">portoLink</code>).
             </div>
             <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">
-              earno deposit 1.0 --receiver 0xYourAddress --porto
+              earno deposit 1.0 --receiver 0xYourAddress
             </pre>
           </section>
         )}

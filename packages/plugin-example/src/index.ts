@@ -6,7 +6,7 @@ import {
   findEarnoChainByKey,
   type EarnoChain,
 } from '@earno/core/chains'
-import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '@earno/core/earnoRequest'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '@earno/core/earnoRequest'
 
 function parseChainSelector(selector: string): { kind: 'id'; id: number } | { kind: 'key'; key: string } {
   const trimmed = selector.trim()
@@ -76,16 +76,6 @@ const example = Cli.create('example', {
       .string()
       .optional()
       .describe('RPC URL override (default: $EARNO_RPC or chain default)'),
-    web: z
-      .boolean()
-      .optional()
-      .describe('Generate a web link to sign + execute in the browser'),
-    webUrl: z
-      .string()
-      .optional()
-      .describe(
-        'Web client base URL (default: $EARNO_WEB_URL or https://earno.sh)',
-      ),
   }),
   env: z.object({
     EARNO_CHAIN: z
@@ -96,17 +86,11 @@ const example = Cli.create('example', {
       .string()
       .optional()
       .describe('RPC URL (default: chain default)'),
-    EARNO_WEB_URL: z
-      .string()
-      .optional()
-      .describe('Web client base URL for --web links (default: https://earno.sh)'),
   }),
   async run(c: any) {
     const { amount } = c.args
     const to = c.options.to as string
-    const wantWeb = c.options.web ?? false
-    const webUrl =
-      c.options.webUrl ?? c.env.EARNO_WEB_URL ?? 'https://earno.sh'
+    const webUrl = c.var?.webUrl ?? 'https://earno.sh'
 
     const { chain, rpcUrl } = resolveChain({
       chain: c.options.chain,
@@ -116,8 +100,7 @@ const example = Cli.create('example', {
 
     const valueWei = parseEther(amount).toString()
 
-    const req: EarnoWebRequestV1 = {
-      v: 1,
+    const req = {
       title: `Send ${amount} ${chain.nativeCurrency.symbol}`,
       chainId: chain.id,
       rpcUrl,
@@ -137,9 +120,9 @@ const example = Cli.create('example', {
           valueWei,
         },
       ],
-    }
+    } satisfies Omit<EarnoWebRequestV1, 'v'>
 
-    const executorUrl = wantWeb ? buildEarnoWebUrl(webUrl, req) : undefined
+    const executorUrl = buildExecutorUrl(webUrl, req)
 
     return c.ok(
       {
@@ -147,20 +130,19 @@ const example = Cli.create('example', {
         rpcUrl,
         to,
         amount: `${amount} ${chain.nativeCurrency.symbol}`,
-        ...(executorUrl ? { executorUrl } : {}),
+        executorUrl,
+        portoLink: executorUrl,
         cast: `cast send ${to} --value ${amount}ether --rpc-url ${rpcUrl} --private-key $WALLET_PRIVATE_KEY`,
       },
       {
-        cta: executorUrl
-          ? {
-              commands: [
-                {
-                  command: executorUrl,
-                  description: 'Open executorUrl',
-                },
-              ],
-            }
-          : undefined,
+        cta: {
+          commands: [
+            {
+              command: executorUrl,
+              description: 'Open executorUrl',
+            },
+          ],
+        },
       },
     )
   },
