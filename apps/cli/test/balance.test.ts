@@ -68,6 +68,9 @@ describe('balance', () => {
       '0xaf88d065e77c8cc2239327c5edb3a432268e5831'
     ] = 1_000_000n // 1 USDC
     tokenBalancesByRpc['https://rpc.berachain.com']![
+      '0x549943e04f40284185054145c6e4e9568c1d3241'
+    ] = 2_150_000n // 2.15 USDC.e
+    tokenBalancesByRpc['https://rpc.berachain.com']![
       '0x779ded0c9e1022225f8e0630b35a9b54be713736'
     ] = 7_000_000n // 7 USDT0
 
@@ -145,6 +148,10 @@ describe('balance', () => {
       expect(ethUsdc.balance).toBe('123.45')
 
       const bera = result.data.chains.find((c: any) => c.chainId === 80094)
+      const beraUsdcE = bera.tokens.find((t: any) =>
+        (t.symbols ?? []).includes('USDC.e'),
+      )
+      expect(beraUsdcE.balance).toBe('2.15')
       const beraUsdt0 = bera.tokens.find((t: any) =>
         (t.symbols ?? []).includes('USDT0'),
       )

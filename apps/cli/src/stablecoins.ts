@@ -101,6 +101,12 @@ export const STABLECOIN_VARIANTS_BY_CHAIN_ID: Record<number, StablecoinVariant[]
   // Berachain
   80094: [
     {
+      family: 'USDC',
+      symbol: 'USDC.e',
+      address: '0x549943e04f40284185054145c6E4e9568C1D3241',
+      decimals: 6,
+    },
+    {
       family: 'USDT',
       symbol: 'USDT0',
       aliases: ['USDT'],
@@ -109,4 +115,3 @@ export const STABLECOIN_VARIANTS_BY_CHAIN_ID: Record<number, StablecoinVariant[]
     },
   ],
 }
-
