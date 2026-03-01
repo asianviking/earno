@@ -38,7 +38,7 @@ export const deposit = {
       .string()
       .optional()
       .describe(
-        'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
+        'Web client base URL (default: $EARNO_WEB_URL or https://earno.sh)',
       ),
     chain: z
       .string()
@@ -70,7 +70,7 @@ export const deposit = {
       .string()
       .optional()
       .describe(
-        'Web client base URL for --web links (default: http://localhost:5173)',
+        'Web client base URL for --web links (default: https://earno.sh)',
       ),
   }),
   examples: [
@@ -92,7 +92,7 @@ export const deposit = {
     const webUrl =
       c.options.webUrl ??
       c.env.EARNO_WEB_URL ??
-      'http://localhost:5173'
+      'https://earno.sh'
 
     if (wantWait && !wantWeb) {
       return c.error({
@@ -216,7 +216,7 @@ export const deposit = {
         return c.error({
           code: 'INVALID_WEB_URL',
           message:
-            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like http://localhost:5173',
+            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like https://earno.sh (or http://localhost:5173 for local dev)',
           retryable: true,
         })
       }

@@ -30,16 +30,17 @@ earno --help
 
 ## Quickstart (web executor)
 
-Start the executor UI locally:
-
-```sh
-pnpm dev:web
-```
-
-Generate a link from the CLI and sign/execute in the browser:
+Generate a link from the CLI and sign/execute in the browser (defaults to `https://earno.sh`):
 
 ```sh
 earno deposit 1.5 --receiver 0xYourAddress --web --wait
+```
+
+To run the executor UI locally instead:
+
+```sh
+pnpm dev:web
+EARNO_WEB_URL=http://localhost:5173 earno deposit 1.0 --receiver 0xYourAddress --web
 ```
 
 To point the CLI at a deployed executor (e.g. Vercel):
@@ -128,7 +129,7 @@ earno --llms
 |----------|-------------|---------|
 | `EARNO_CHAIN` | Default chain key/chainId | `berachain` |
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
-| `EARNO_WEB_URL` | Base URL for `--web` executor links | `http://localhost:5173` |
+| `EARNO_WEB_URL` | Base URL for `--web` executor links | `https://earno.sh` |
 | `EARNO_PLUGINS` | Comma-separated plugin import specs | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 

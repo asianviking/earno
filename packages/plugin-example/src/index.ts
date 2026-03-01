@@ -84,7 +84,7 @@ const example = Cli.create('example', {
       .string()
       .optional()
       .describe(
-        'Web client base URL (default: $EARNO_WEB_URL or http://localhost:5173)',
+        'Web client base URL (default: $EARNO_WEB_URL or https://earno.sh)',
       ),
   }),
   env: z.object({
@@ -99,14 +99,14 @@ const example = Cli.create('example', {
     EARNO_WEB_URL: z
       .string()
       .optional()
-      .describe('Web client base URL for --web links (default: http://localhost:5173)'),
+      .describe('Web client base URL for --web links (default: https://earno.sh)'),
   }),
   async run(c: any) {
     const { amount } = c.args
     const to = c.options.to as string
     const wantWeb = c.options.web ?? false
     const webUrl =
-      c.options.webUrl ?? c.env.EARNO_WEB_URL ?? 'http://localhost:5173'
+      c.options.webUrl ?? c.env.EARNO_WEB_URL ?? 'https://earno.sh'
 
     const { chain, rpcUrl } = resolveChain({
       chain: c.options.chain,
@@ -172,4 +172,3 @@ export const earnoPlugin = {
 }
 
 export default earnoPlugin
-
