@@ -15,7 +15,7 @@ export const ETHEREUM_MAINNET: EarnoChain = {
   key: 'ethereum',
   name: 'Ethereum',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: ['https://cloudflare-eth.com'],
+  rpcUrls: ['https://ethereum.publicnode.com', 'https://cloudflare-eth.com'],
 } as const
 
 export const BASE_MAINNET: EarnoChain = {
