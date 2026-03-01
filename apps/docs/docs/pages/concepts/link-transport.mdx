@@ -1,0 +1,16 @@
+# Link transport
+
+earno is optimized for “copy a link, execute in the browser”.
+
+Default transport:
+
+1. Request JSON → gzip
+2. gzip bytes → base64url
+3. Embed payload in the URL fragment: `#r=<payload>`
+
+Why fragments:
+
+- Avoids query stripping in some environments
+- Not sent to servers by default (less chance of ending up in logs)
+
+The executor may also accept legacy/fallback inputs like `?r=` depending on configuration.

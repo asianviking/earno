@@ -10,6 +10,9 @@
     "test": "pnpm --filter @earno/core build && pnpm --filter @earno/plugin-berachain test && pnpm --filter @earno/cli test",
     "dev:web": "pnpm --filter @earno/core build && pnpm --filter earno-web dev",
     "build:web": "pnpm --filter @earno/core build && pnpm --filter earno-web build",
-    "preview:web": "pnpm --filter earno-web preview"
+    "preview:web": "pnpm --filter earno-web preview",
+    "dev:docs": "pnpm --filter earno-docs dev",
+    "build:docs": "pnpm --filter earno-docs build",
+    "preview:docs": "pnpm --filter earno-docs preview"
   }
 }

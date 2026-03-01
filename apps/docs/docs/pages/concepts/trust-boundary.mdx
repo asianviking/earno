@@ -1,0 +1,16 @@
+# Trust boundary
+
+earno is designed around a simple rule:
+
+- **Strategy code runs locally in the CLI**
+- **The browser executor runs only the portable request (`calls`)**
+
+This keeps the **trust boundary** clear:
+
+- You can use arbitrary plugins/strategies to *build* a request without needing to trust them in the browser.
+- The web executor can remain small and auditable: it decodes a request and sends transactions via your wallet.
+
+In practice:
+
+- Plugins can depend on `viem`, hit APIs, do routing, etc.
+- The executor should never execute third‑party plugin logic — it should only show the request and submit the `calls`.

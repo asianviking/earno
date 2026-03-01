@@ -1,0 +1,33 @@
+# CLI basics
+
+## Common commands
+
+```sh
+earno --help
+earno send --help
+earno balance --help
+earno swap --help
+```
+
+## Web executor URL
+
+By default earno prints links targeting `https://earno.sh`. Override it per-run:
+
+```sh
+earno send 0.01 --to 0xYourAddress --web-url http://localhost:5173
+```
+
+Or via environment variable:
+
+```sh
+EARNO_WEB_URL=http://localhost:5173 earno send 0.01 --to 0xYourAddress
+```
+
+## Output formats
+
+```sh
+earno send 0.01 --to 0xYourAddress --format toon
+earno send 0.01 --to 0xYourAddress --format json
+earno send 0.01 --to 0xYourAddress --format yaml
+earno send 0.01 --to 0xYourAddress --format md
+```
