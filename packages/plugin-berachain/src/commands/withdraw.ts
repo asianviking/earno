@@ -121,7 +121,6 @@ export const withdraw = {
         receiver,
         note: 'Step 2 amount depends on the exchange rate at execution time. Run `earno bera balance` to check current rate.',
         executorUrl,
-        portoLink: executorUrl,
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,

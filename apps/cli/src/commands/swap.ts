@@ -719,7 +719,6 @@ export const swap = {
         amountWei,
         relayRequestIds,
         ...(executorUrl ? { executorUrl } : {}),
-        portoLink: executorUrl,
         hasSignatureSteps,
         calls: calls.map((call) => ({
           label: call.label,

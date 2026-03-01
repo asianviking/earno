@@ -158,7 +158,6 @@ export const deposit = {
         sender,
         receiver,
         executorUrl,
-        portoLink: executorUrl,
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,
