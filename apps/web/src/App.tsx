@@ -25,7 +25,27 @@ function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-10">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">earno</h1>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight">earno</h1>
+            <div className="flex items-center gap-3 text-sm">
+              <a
+                className="text-zinc-300 underline decoration-zinc-600 underline-offset-4 hover:text-zinc-100"
+                href="https://github.com/asianviking/earno"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+              <a
+                className="text-zinc-300 underline decoration-zinc-600 underline-offset-4 hover:text-zinc-100"
+                href="https://www.npmjs.com/package/@earno/cli"
+                target="_blank"
+                rel="noreferrer"
+              >
+                npm
+              </a>
+            </div>
+          </div>
           <p className="text-sm text-zinc-400">
             Browser executor for earno intents (wallet signing + Relay steps).
           </p>
@@ -53,9 +73,20 @@ function App() {
               <code className="text-zinc-200">executorUrl</code> (or{' '}
               <code className="text-zinc-200">portoLink</code>).
             </div>
-            <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">
-              earno send 0.01 --to 0xYourAddress
-            </pre>
+            <div className="mt-3 text-sm text-zinc-400">
+              Install:{' '}
+              <code className="text-zinc-200">npm i -g @earno/cli</code> (docs:{' '}
+              <a
+                className="text-zinc-300 underline decoration-zinc-600 underline-offset-4 hover:text-zinc-100"
+                href="https://github.com/asianviking/earno#install"
+                target="_blank"
+                rel="noreferrer"
+              >
+                github.com/asianviking/earno
+              </a>
+              )
+            </div>
+            <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">{'earno swap 0.01 --from native --to USDC --chain base --toChain base --sender 0xYourAddress'}</pre>
           </section>
         )}
       </main>
