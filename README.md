@@ -28,6 +28,17 @@ After either method, `earno` is available everywhere:
 earno --help
 ```
 
+## Development
+
+```sh
+pnpm install
+pnpm build
+pnpm test
+
+pnpm dev:web
+pnpm --filter @earno/cli dev
+```
+
 ## Quickstart (web executor)
 
 Generate a link from the CLI and sign/execute in the browser (defaults to `https://earno.sh`):
@@ -68,7 +79,7 @@ earno balance --address 0xYourAddress
 Query a single chain:
 
 ```sh
-earno balance --address 0xYourAddress --chain base
+earno balance --address 0xYourAddress --chain berachain
 ```
 
 ### Send
@@ -80,7 +91,7 @@ earno send 0.01 --to 0xYourAddress
 ### Swap (Relay)
 
 ```sh
-earno swap 0.01 --from native --to USDC --chain base --toChain base --sender 0xYourAddress
+earno swap 0.1 --from native --to USDC --chain berachain --to-chain berachain --sender 0xYourAddress
 ```
 
 ## Plugins
@@ -112,10 +123,10 @@ EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress
 
 ## Output formats
 
-Default output is TOON (token-efficient for agents). Use flags for alternatives:
+Default output is `toon` (token-efficient for agents). Use `--format` for alternatives:
 
 ```sh
-earno send 0.01 --to 0x... --json          # JSON
+earno send 0.01 --to 0x... --format json   # JSON
 earno send 0.01 --to 0x... --format yaml   # YAML
 earno send 0.01 --to 0x... --format md     # Markdown
 ```
@@ -129,7 +140,7 @@ earno is agent-native via incur. Any AI agent can discover and use it:
 earno mcp add
 
 # Sync skill files to your agent
-npx @earno/cli skills add
+earno skills add
 
 # Print LLM-readable command manifest
 earno --llms
@@ -143,6 +154,7 @@ earno --llms
 | `EARNO_RPC` | RPC URL override | — |
 | `EARNO_WEB_URL` | Base URL for executor links (`executorUrl`) | `https://earno.sh` |
 | `EARNO_PLUGINS` | Comma-separated plugin import specs | — |
+| `RELAY_API_KEY` | Relay API key (optional; set if you hit rate limits) | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 
 ## License
