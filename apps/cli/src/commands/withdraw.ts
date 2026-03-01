@@ -1,7 +1,7 @@
 import { z } from 'incur'
 import { buildRedeem } from '../tx.js'
 import { BERACHAIN, SWBERA } from '../contracts.js'
-import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '../porto-link.js'
 import { resolveCliChain } from '../chain.js'
 import { startEarnoCallbackServer } from '../callback-server.js'
 
@@ -19,24 +19,6 @@ export const withdraw = {
       .optional()
       .describe(
         'Receiver address for the withdrawn BERA (defaults to sender — fill in your address)',
-      ),
-    porto: z
-      .boolean()
-      .optional()
-      .describe(
-        'Legacy alias for --web',
-      ),
-    web: z
-      .boolean()
-      .optional()
-      .describe(
-        'Generate a web link to sign + execute in the browser',
-      ),
-    webUrl: z
-      .string()
-      .optional()
-      .describe(
-        'Web client base URL (default: $EARNO_WEB_URL or https://earno.sh)',
       ),
     chain: z
       .string()
@@ -64,12 +46,6 @@ export const withdraw = {
       .string()
       .optional()
       .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
-    EARNO_WEB_URL: z
-      .string()
-      .optional()
-      .describe(
-        'Web client base URL for --web links (default: https://earno.sh)',
-      ),
   }),
   examples: [
     {
@@ -83,21 +59,9 @@ export const withdraw = {
     const receiver = c.options.receiver ?? '0xYOUR_ADDRESS'
     let chainId = BERACHAIN.id
     let rpcUrl = c.env.EARNO_RPC ?? BERACHAIN.rpc
-    const wantWeb = c.options.web ?? c.options.porto ?? false
     const wantWait = c.options.wait ?? false
     const waitTimeoutSec = c.options.waitTimeoutSec ?? 300
-    const webUrl =
-      c.options.webUrl ??
-      c.env.EARNO_WEB_URL ??
-      'https://earno.sh'
-
-    if (wantWait && !wantWeb) {
-      return c.error({
-        code: 'WAIT_REQUIRES_WEB',
-        message: '--wait requires --web',
-        retryable: true,
-      })
-    }
+    const webUrl = c.var?.webUrl ?? 'https://earno.sh'
 
     if (receiver === '0xYOUR_ADDRESS') {
       return c.error({
@@ -142,56 +106,44 @@ export const withdraw = {
 
     const steps = buildRedeem(shares, receiver, { rpcUrl })
 
-    let executorUrl: string | undefined
     let callbackWait: Promise<{ txHash?: `0x${string}`; txHashes?: `0x${string}`[]; bundleId?: `0x${string}`; status?: string }> | undefined
     let closeCallback: (() => Promise<void>) | undefined
     let callback: { url: string; state: string } | undefined
 
-    if (wantWeb && wantWait) {
+    if (wantWait) {
       const server = await startEarnoCallbackServer()
       callback = server.callback
       callbackWait = server.waitForCallback
       closeCallback = server.close
     }
 
-    if (wantWeb) {
-      try {
-        const executable = steps.filter((s) => s.calldata.startsWith('0x'))
-        const req: EarnoWebRequestV1 = {
-          v: 1,
-          title: 'Withdraw sWBERA → BERA',
-          chainId,
-          rpcUrl,
-          sender: receiver as `0x${string}`,
-          receiver: receiver as `0x${string}`,
-          constraints: {
-            allowlistContracts: [SWBERA.address],
-          },
-          intent: {
-            plugin: 'earno',
-            action: 'withdraw',
-            params: { shares, receiver, chainId, rpcUrl },
-            display: { strategy: 'sWBERA → BERA' },
-          },
-          ...(callback ? { callback } : {}),
-          calls: executable.map((s) => ({
-            label: s.label,
-            to: s.to as `0x${string}`,
-            data: s.calldata as `0x${string}`,
-          })),
-        }
-        executorUrl = buildEarnoWebUrl(webUrl, req)
-      } catch {
-        return c.error({
-          code: 'INVALID_WEB_URL',
-          message:
-            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like https://earno.sh (or http://localhost:5173 for local dev)',
-          retryable: true,
-        })
-      }
-    }
+    const executable = steps.filter((s) => s.calldata.startsWith('0x'))
+    const req = {
+      title: 'Withdraw sWBERA → BERA',
+      chainId,
+      rpcUrl,
+      sender: receiver as `0x${string}`,
+      receiver: receiver as `0x${string}`,
+      constraints: {
+        allowlistContracts: [SWBERA.address],
+      },
+      intent: {
+        plugin: 'earno',
+        action: 'withdraw',
+        params: { shares, receiver, chainId, rpcUrl },
+        display: { strategy: 'sWBERA → BERA' },
+      },
+      ...(callback ? { callback } : {}),
+      calls: executable.map((s) => ({
+        label: s.label,
+        to: s.to as `0x${string}`,
+        data: s.calldata as `0x${string}`,
+      })),
+    } satisfies Omit<EarnoWebRequestV1, 'v'>
 
-    if (wantWait && executorUrl && callbackWait && closeCallback) {
+    const executorUrl = buildExecutorUrl(webUrl, req)
+
+    if (wantWait && callbackWait && closeCallback) {
       if (!c.agent) {
         console.error(`Open in browser:\n${executorUrl}\n\nWaiting for callback…`)
       }
@@ -208,6 +160,7 @@ export const withdraw = {
             shares: `${shares} sWBERA`,
             receiver,
             executorUrl,
+            portoLink: executorUrl,
             callback: { ...callback },
             txHash: result.txHash ?? null,
             txHashes: result.txHashes ?? null,
@@ -246,7 +199,8 @@ export const withdraw = {
         shares: `${shares} sWBERA`,
         receiver,
         note: 'Step 2 amount depends on the exchange rate at execution time. Run `earno balance` to check current rate.',
-        ...(executorUrl ? { executorUrl, portoLink: executorUrl } : {}),
+        executorUrl,
+        portoLink: executorUrl,
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,

@@ -33,20 +33,26 @@ earno --help
 Generate a link from the CLI and sign/execute in the browser (defaults to `https://earno.sh`):
 
 ```sh
-earno deposit 1.5 --receiver 0xYourAddress --web --wait
+earno deposit 1.5 --receiver 0xYourAddress --wait
+```
+
+Override the executor base URL for a single run:
+
+```sh
+earno deposit 1.0 --receiver 0xYourAddress --web-url http://localhost:5173
 ```
 
 To run the executor UI locally instead:
 
 ```sh
 pnpm dev:web
-EARNO_WEB_URL=http://localhost:5173 earno deposit 1.0 --receiver 0xYourAddress --web
+EARNO_WEB_URL=http://localhost:5173 earno deposit 1.0 --receiver 0xYourAddress
 ```
 
 To point the CLI at a deployed executor (e.g. Vercel):
 
 ```sh
-EARNO_WEB_URL=https://your-app.vercel.app earno deposit 1.0 --receiver 0xYourAddress --web
+EARNO_WEB_URL=https://your-app.vercel.app earno deposit 1.0 --receiver 0xYourAddress
 ```
 
 ## Built-in strategies (Berachain)
@@ -95,7 +101,7 @@ earno supports strategy plugins as nested command groups (e.g. `earno bend depos
 earno plugin add @ayvee/bend
 
 # Or load plugins ad-hoc for a single run
-EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress --web
+EARNO_PLUGINS=@earno/plugin-example earno example send 0.01 --to 0xYourAddress
 ```
 
 ## Output formats
@@ -129,7 +135,7 @@ earno --llms
 |----------|-------------|---------|
 | `EARNO_CHAIN` | Default chain key/chainId | `berachain` |
 | `EARNO_RPC` | Berachain RPC URL | `https://rpc.berachain.com/` |
-| `EARNO_WEB_URL` | Base URL for `--web` executor links | `https://earno.sh` |
+| `EARNO_WEB_URL` | Base URL for executor links (`executorUrl` / `portoLink`) | `https://earno.sh` |
 | `EARNO_PLUGINS` | Comma-separated plugin import specs | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 

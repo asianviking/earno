@@ -2,7 +2,7 @@ import { z } from 'incur'
 import { createPublicClient, http, parseEther } from 'viem'
 import { buildDeposit } from '../tx.js'
 import { BERACHAIN, SWBERA, WBERA } from '../contracts.js'
-import { buildEarnoWebUrl, type EarnoWebRequestV1 } from '../porto-link.js'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '../porto-link.js'
 import { resolveCliChain } from '../chain.js'
 import { startEarnoCallbackServer } from '../callback-server.js'
 
@@ -21,24 +21,6 @@ export const deposit = {
       .optional()
       .describe(
         'Sender wallet address (defaults to receiver; required for smart approvals when depositing to a different receiver)',
-      ),
-    porto: z
-      .boolean()
-      .optional()
-      .describe(
-        'Legacy alias for --web',
-      ),
-    web: z
-      .boolean()
-      .optional()
-      .describe(
-        'Generate a web link to sign + execute in the browser',
-      ),
-    webUrl: z
-      .string()
-      .optional()
-      .describe(
-        'Web client base URL (default: $EARNO_WEB_URL or https://earno.sh)',
       ),
     chain: z
       .string()
@@ -66,12 +48,6 @@ export const deposit = {
       .string()
       .optional()
       .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
-    EARNO_WEB_URL: z
-      .string()
-      .optional()
-      .describe(
-        'Web client base URL for --web links (default: https://earno.sh)',
-      ),
   }),
   examples: [
     {
@@ -86,21 +62,9 @@ export const deposit = {
     const sender = c.options.sender ?? receiver
     let chainId = BERACHAIN.id
     let rpcUrl = c.env.EARNO_RPC ?? BERACHAIN.rpc
-    const wantWeb = c.options.web ?? c.options.porto ?? false
     const wantWait = c.options.wait ?? false
     const waitTimeoutSec = c.options.waitTimeoutSec ?? 300
-    const webUrl =
-      c.options.webUrl ??
-      c.env.EARNO_WEB_URL ??
-      'https://earno.sh'
-
-    if (wantWait && !wantWeb) {
-      return c.error({
-        code: 'WAIT_REQUIRES_WEB',
-        message: '--wait requires --web',
-        retryable: true,
-      })
-    }
+    const webUrl = c.var?.webUrl ?? 'https://earno.sh'
 
     if (receiver === '0xYOUR_ADDRESS') {
       return c.error({
@@ -173,56 +137,44 @@ export const deposit = {
 
     const steps = buildDeposit(amount, receiver, { includeApprove, rpcUrl })
 
-    let executorUrl: string | undefined
     let callbackWait: Promise<{ txHash?: `0x${string}`; txHashes?: `0x${string}`[]; bundleId?: `0x${string}`; status?: string }> | undefined
     let closeCallback: (() => Promise<void>) | undefined
     let callback: { url: string; state: string } | undefined
 
-    if (wantWeb && wantWait) {
+    if (wantWait) {
       const server = await startEarnoCallbackServer()
       callback = server.callback
       callbackWait = server.waitForCallback
       closeCallback = server.close
     }
 
-    if (wantWeb) {
-      try {
-        const req: EarnoWebRequestV1 = {
-          v: 1,
-          title: 'Deposit BERA → sWBERA',
-          chainId,
-          rpcUrl,
-          sender: sender as `0x${string}`,
-          receiver: receiver as `0x${string}`,
-          constraints: {
-            allowlistContracts: [WBERA.address, SWBERA.address],
-          },
-          intent: {
-            plugin: 'earno',
-            action: 'deposit',
-            params: { amount, sender, receiver, chainId, rpcUrl },
-            display: { strategy: 'BERA → sWBERA' },
-          },
-          ...(callback ? { callback } : {}),
-          calls: steps.map((s) => ({
-            label: s.label,
-            to: s.to as `0x${string}`,
-            data: s.calldata as `0x${string}`,
-            ...(s.value ? { valueWei: wei.toString() } : {}),
-          })),
-        }
-        executorUrl = buildEarnoWebUrl(webUrl, req)
-      } catch {
-        return c.error({
-          code: 'INVALID_WEB_URL',
-          message:
-            'Invalid --webUrl / $EARNO_WEB_URL. Expected a fully-qualified URL like https://earno.sh (or http://localhost:5173 for local dev)',
-          retryable: true,
-        })
-      }
-    }
+    const req = {
+      title: 'Deposit BERA → sWBERA',
+      chainId,
+      rpcUrl,
+      sender: sender as `0x${string}`,
+      receiver: receiver as `0x${string}`,
+      constraints: {
+        allowlistContracts: [WBERA.address, SWBERA.address],
+      },
+      intent: {
+        plugin: 'earno',
+        action: 'deposit',
+        params: { amount, sender, receiver, chainId, rpcUrl },
+        display: { strategy: 'BERA → sWBERA' },
+      },
+      ...(callback ? { callback } : {}),
+      calls: steps.map((s) => ({
+        label: s.label,
+        to: s.to as `0x${string}`,
+        data: s.calldata as `0x${string}`,
+        ...(s.value ? { valueWei: wei.toString() } : {}),
+      })),
+    } satisfies Omit<EarnoWebRequestV1, 'v'>
 
-    if (wantWait && executorUrl && callbackWait && closeCallback) {
+    const executorUrl = buildExecutorUrl(webUrl, req)
+
+    if (wantWait && callbackWait && closeCallback) {
       if (!c.agent) {
         console.error(`Open in browser:\n${executorUrl}\n\nWaiting for callback…`)
       }
@@ -240,6 +192,7 @@ export const deposit = {
             sender,
             receiver,
             executorUrl,
+            portoLink: executorUrl,
             callback: { ...callback },
             txHash: result.txHash ?? null,
             txHashes: result.txHashes ?? null,
@@ -278,7 +231,8 @@ export const deposit = {
         amount: `${amount} BERA`,
         sender,
         receiver,
-        ...(executorUrl ? { executorUrl, portoLink: executorUrl } : {}),
+        executorUrl,
+        portoLink: executorUrl,
         steps: steps.map((s) => ({
           label: s.label,
           to: s.to,
