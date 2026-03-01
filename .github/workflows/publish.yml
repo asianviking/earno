@@ -3,6 +3,12 @@ name: Publish to npm
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.2.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,8 +18,24 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve tag/version
+        id: meta
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ inputs.tag }}"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "Missing release tag. Provide inputs.tag (e.g. v0.2.0)." >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.tag }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,8 +52,7 @@ jobs:
 
       - name: Validate tag matches versions
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
+          VERSION="${{ steps.meta.outputs.version }}"
           node -e "const expected=process.argv[1]; const pkgs=['./apps/cli/package.json','./packages/core/package.json','./packages/plugin-example/package.json','./packages/plugin-berachain/package.json']; const versions=pkgs.map((p)=>({p, v: require(p).version})); const mismatch=versions.filter((x)=>x.v!==expected); if(mismatch.length){console.error('Release tag does not match package versions. Expected:', expected); for(const m of mismatch) console.error(m.p+':', m.v); process.exit(1)}" "$VERSION"
 
       - name: Install
@@ -51,12 +72,25 @@ jobs:
 
       - name: Publish
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          npm publish "./release-assets/earno-core-${VERSION}.tgz" --access public
-          npm publish "./release-assets/earno-plugin-example-${VERSION}.tgz" --access public
-          npm publish "./release-assets/earno-plugin-berachain-${VERSION}.tgz" --access public
-          npm publish "./release-assets/earno-cli-${VERSION}.tgz" --access public
+          VERSION="${{ steps.meta.outputs.version }}"
+
+          publish_if_needed() {
+            local pkg="$1"
+            local tarball="$2"
+            local version="$3"
+
+            if npm view "${pkg}@${version}" version >/dev/null 2>&1; then
+              echo "Skipping ${pkg}@${version} (already published)"
+              return 0
+            fi
+
+            npm publish "$tarball" --access public
+          }
+
+          publish_if_needed "@earno/core" "./release-assets/earno-core-${VERSION}.tgz" "$VERSION"
+          publish_if_needed "@earno/plugin-example" "./release-assets/earno-plugin-example-${VERSION}.tgz" "$VERSION"
+          publish_if_needed "@earno/plugin-berachain" "./release-assets/earno-plugin-berachain-${VERSION}.tgz" "$VERSION"
+          publish_if_needed "@earno/cli" "./release-assets/earno-cli-${VERSION}.tgz" "$VERSION"
 
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
