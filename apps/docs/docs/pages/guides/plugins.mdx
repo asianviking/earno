@@ -1,26 +1,423 @@
-# Plugins
+# How do I add my own plugins?
 
-earno supports **strategy plugins** as nested command groups (for example: `earno bera deposit ...`).
+Plugins let you add your own commands to earno. You write the strategy logic — earno handles wallet connection, signing, and execution.
 
-## Enable a bundled plugin
+A plugin produces transaction bundles (the `calls` array) that users sign in the web executor or run via `cast`. No plugin code runs in the browser — the [trust boundary](/concepts/trust-boundary) is clean.
 
-The Berachain plugin ships with `@earno/cli`, but is opt-in:
+## How it works
 
-```sh
-earno plugin add @earno/plugin-berachain
-earno bera --help
+```
+Plugin (CLI-side, trusted)     Web executor (untrusted)
+┌──────────────────────┐       ┌─────────────────────┐
+│  User params          │       │  Receives calls[]   │
+│  → on-chain reads     │──────▶│  → signs + sends    │
+│  → build calls[]      │  URL  │  → shows tx status  │
+└──────────────────────┘       └─────────────────────┘
 ```
 
-## Add an external plugin spec
+Your plugin turns user intent into an [action request](/concepts/action-request) — a JSON object with a title, chain, and an ordered list of contract calls. The web executor handles wallet connection, signing, and broadcasting.
 
-`earno plugin add` updates your local config — it does not install packages globally:
+## Quickstart: minimal plugin
+
+### 1. Scaffold the package
 
 ```sh
-earno plugin add @ayvee/bend
+mkdir my-plugin && cd my-plugin
+npm init -y
+npm install @earno/core incur viem
 ```
 
-## Load ad-hoc for a single run
+Set `"type": "module"` in `package.json`:
+
+```json
+{
+  "name": "earno-plugin-my-strategy",
+  "type": "module",
+  "main": "./src/index.js",
+  "dependencies": {
+    "@earno/core": "^0.2.1",
+    "incur": "^0.1.7",
+    "viem": "^2.46.3"
+  }
+}
+```
+
+### 2. Write the plugin
+
+```typescript
+// src/index.ts
+import { Cli, z } from 'incur'
+import { parseEther } from 'viem'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '@earno/core/earnoRequest'
+import { EARNO_DEFAULT_CHAIN } from '@earno/core/chains'
+
+const mystrategy = Cli.create('mystrategy', {
+  description: 'My custom DeFi strategy',
+})
+  .command('deposit', {
+    description: 'Deposit tokens into the vault',
+    args: z.object({
+      amount: z.string().describe('Amount to deposit (e.g. "1.5")'),
+    }),
+    options: z.object({
+      receiver: z.string().describe('Receiver address'),
+    }),
+    env: z.object({
+      EARNO_WEB_URL: z.string().optional(),
+    }),
+    async run(c: any) {
+      const { amount } = c.args
+      const receiver = c.options.receiver as `0x${string}`
+      const webUrl = c.var?.webUrl ?? 'https://earno.sh'
+
+      // Build the transaction bundle
+      const req = {
+        title: `Deposit ${amount} ETH`,
+        chainId: EARNO_DEFAULT_CHAIN.id,
+        rpcUrl: EARNO_DEFAULT_CHAIN.rpcUrls[0],
+        receiver,
+        intent: {
+          plugin: 'earno-plugin-my-strategy',
+          action: 'deposit',
+          params: { amount, receiver },
+        },
+        calls: [
+          {
+            label: `Deposit ${amount} ETH`,
+            to: '0xYOUR_VAULT_ADDRESS' as `0x${string}`,
+            data: '0x', // encoded calldata — use viem's encodeFunctionData()
+            valueWei: parseEther(amount).toString(),
+          },
+        ],
+      } satisfies Omit<EarnoWebRequestV1, 'v'>
+
+      const executorUrl = buildExecutorUrl(webUrl, req)
+
+      return c.ok(
+        {
+          chainId: req.chainId,
+          amount: `${amount} ETH`,
+          executorUrl,
+          cast: `cast send 0xYOUR_VAULT --value ${amount}ether --rpc-url ${req.rpcUrl} --private-key $WALLET_PRIVATE_KEY`,
+        },
+        {
+          cta: {
+            commands: [
+              { command: executorUrl, description: 'Open in browser' },
+            ],
+          },
+        },
+      )
+    },
+  })
+
+// Export the plugin — earno looks for this shape
+export const earnoPlugin = {
+  id: 'earno-plugin-my-strategy',
+  cli: mystrategy,
+}
+
+export default earnoPlugin
+```
+
+### 3. Enable the plugin
 
 ```sh
-EARNO_PLUGINS=@earno/plugin-example earno example --help
+# Register it (path-based — no npm publish needed)
+earno plugin add ./my-plugin
+
+# Use it
+earno mystrategy deposit 1.5 --receiver 0xYourAddress
+```
+
+## Plugin export contract
+
+earno resolves your plugin's default export and looks for one of these shapes (tried in order):
+
+```typescript
+// Option 1: Named export (recommended)
+export const earnoPlugin = { id: string, cli: Cli }
+
+// Option 2: Default export with id + cli
+export default { id: string, cli: Cli }
+
+// Option 3: Bare Cli (id defaults to the plugin spec)
+export default cli
+
+// Option 4: Named "plugin" export
+export const plugin = { id: string, cli: Cli }
+```
+
+The `cli` must be an [incur](https://github.com/wevm/incur) `Cli` instance — earno validates it has `.command()` and `.serve()` methods.
+
+## Anatomy of a command
+
+Each command registered on your Cli gets these fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `description` | `string` | yes | One-line description shown in `--help` |
+| `args` | `z.object()` | no | Positional arguments (zod schema) |
+| `options` | `z.object()` | no | Named flags like `--receiver` (zod schema) |
+| `env` | `z.object()` | no | Environment variables the command reads |
+| `examples` | `array` | no | Example invocations for `--help` output |
+| `run` | `async (c) => ...` | yes | The command handler |
+
+### The context object (`c`)
+
+Your `run` function receives a context with:
+
+- `c.args` — parsed positional arguments
+- `c.options` — parsed named options
+- `c.env` — parsed environment variables
+- `c.var?.webUrl` — the web executor base URL (injected by earno)
+- `c.ok(data, metadata?)` — return success (earno formats this for output)
+- `c.error({ code, message, retryable? })` — return an error
+
+### Returning results
+
+`c.ok()` takes two arguments:
+
+```typescript
+c.ok(
+  // 1. Data object — key-value pairs shown to the user
+  {
+    chainId: 1,
+    amount: '1.5 ETH',
+    executorUrl: 'https://earno.sh/#r=...',
+    cast: 'cast send ...',
+  },
+  // 2. Metadata (optional) — hints for agents and the CLI
+  {
+    cta: {
+      commands: [
+        { command: 'https://earno.sh/#r=...', description: 'Open in browser' },
+        { command: 'earno mystrategy balance --address 0x...', description: 'Check position' },
+      ],
+    },
+  },
+)
+```
+
+The `cta.commands` array gives agents and humans suggested next actions after the command runs.
+
+## The action request
+
+This is the core data structure — a portable transaction bundle. See [Action request](/concepts/action-request) for the full spec. The key types:
+
+```typescript
+type EarnoWebRequestV1 = {
+  v: 1                              // Version (always 1)
+  title: string                     // User-facing label ("Deposit 1.5 ETH")
+  chainId: number                   // EVM chain ID
+  rpcUrl?: string                   // RPC endpoint
+  sender?: `0x${string}`            // Expected signer (executor enforces)
+  receiver?: `0x${string}`          // Receiver address
+  calls: EarnoWebCall[]             // Ordered transaction steps
+  constraints?: {
+    allowlistContracts?: `0x${string}`[]
+  }
+  intent?: {
+    plugin?: string
+    action?: string
+    params?: unknown
+    display?: Record<string, unknown>
+  }
+}
+
+type EarnoWebCall = {
+  label: string                     // Step description ("Approve WBERA")
+  to: `0x${string}`                // Target contract
+  data: `0x${string}`              // Encoded calldata
+  valueWei?: string                 // Native token value (bigint as string)
+}
+```
+
+### Building calldata with viem
+
+Most plugins use viem's `encodeFunctionData` to build the `data` field:
+
+```typescript
+import { encodeFunctionData, parseEther } from 'viem'
+
+const calls = [
+  {
+    label: 'Approve WBERA for vault',
+    to: WBERA_ADDRESS,
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [VAULT_ADDRESS, parseEther(amount)],
+    }),
+  },
+  {
+    label: 'Deposit into vault',
+    to: VAULT_ADDRESS,
+    data: encodeFunctionData({
+      abi: vaultAbi,
+      functionName: 'deposit',
+      args: [parseEther(amount), receiver],
+    }),
+  },
+]
+```
+
+### Generating executor URLs
+
+Use `buildExecutorUrl()` to create a clickable link:
+
+```typescript
+import { buildExecutorUrl } from '@earno/core/earnoRequest'
+
+const url = buildExecutorUrl('https://earno.sh', req)
+// → https://earno.sh/#r=<gzipped-base64url-encoded-request>
+```
+
+The request is gzip-compressed and base64url-encoded into the URL fragment. The web executor decodes it, shows the user what they're signing, and executes.
+
+## Multi-command plugins
+
+Real plugins typically have multiple commands. Split them into separate files:
+
+```
+my-plugin/
+├── src/
+│   ├── index.ts          # Plugin entry — wires up commands
+│   ├── commands/
+│   │   ├── deposit.ts    # Each command in its own file
+│   │   ├── withdraw.ts
+│   │   └── balance.ts
+│   └── contracts.ts      # ABIs + addresses
+└── package.json
+```
+
+Entry point:
+
+```typescript
+// src/index.ts
+import { Cli } from 'incur'
+import { deposit } from './commands/deposit.js'
+import { balance } from './commands/balance.js'
+import { withdraw } from './commands/withdraw.js'
+
+const mycli = Cli.create('mystrategy', {
+  description: 'My DeFi strategy plugin',
+})
+  .command('deposit', deposit)
+  .command('balance', balance)
+  .command('withdraw', withdraw)
+
+export const earnoPlugin = {
+  id: 'earno-plugin-my-strategy',
+  cli: mycli,
+}
+
+export default earnoPlugin
+```
+
+Command file:
+
+```typescript
+// src/commands/balance.ts
+import { z } from 'incur'
+import { createPublicClient, formatEther, http } from 'viem'
+
+export const balance = {
+  description: 'Check vault position',
+  options: z.object({
+    address: z.string().describe('Wallet address to check'),
+    rpc: z.string().optional().describe('RPC URL override'),
+  }),
+  env: z.object({
+    EARNO_RPC: z.string().optional(),
+  }),
+  examples: [
+    { options: { address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' } },
+  ],
+  async run(c: any) {
+    const client = createPublicClient({
+      chain: { id: 80094, name: 'Berachain', /* ... */ },
+      transport: http(c.options.rpc ?? c.env.EARNO_RPC ?? 'https://rpc.berachain.com/'),
+    })
+
+    const shares = await client.readContract({
+      address: VAULT_ADDRESS,
+      abi: vaultAbi,
+      functionName: 'balanceOf',
+      args: [c.options.address],
+    })
+
+    return c.ok({
+      shares: formatEther(shares),
+    })
+  },
+}
+```
+
+## Plugin loading
+
+earno loads plugins from two sources (deduplicated):
+
+1. **Config file** (`~/.config/earno/config.json`):
+   ```json
+   { "plugins": ["@scope/my-plugin", "./local-plugin"] }
+   ```
+
+2. **Environment variable** (`EARNO_PLUGINS`):
+   ```sh
+   EARNO_PLUGINS=@scope/my-plugin,./local-plugin earno --help
+   ```
+
+Plugin specs can be:
+- **npm packages**: `@scope/my-plugin` or `my-plugin` (must be installed)
+- **Local paths**: `./my-plugin`, `/absolute/path/to/plugin`
+- **file:// URLs**: `file:///path/to/plugin/dist/index.js`
+
+### Managing plugins
+
+```sh
+earno plugin add @scope/my-plugin    # Add to config (does NOT npm install)
+earno plugin list                    # Show configured + env plugins
+earno plugin remove @scope/my-plugin # Remove from config
+```
+
+After `earno plugin add`, you still need to install the package yourself (`npm install @scope/my-plugin`). For local plugins, just point to the directory.
+
+## Publishing
+
+To share your plugin:
+
+```json
+{
+  "name": "@scope/earno-plugin-my-strategy",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@earno/core": "^0.2.1",
+    "incur": "^0.1.7",
+    "viem": "^2.46.3"
+  }
+}
+```
+
+```sh
+npm publish
+```
+
+Users install and enable with:
+
+```sh
+npm install @scope/earno-plugin-my-strategy
+earno plugin add @scope/earno-plugin-my-strategy
 ```
