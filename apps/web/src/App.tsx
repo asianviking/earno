@@ -2,14 +2,14 @@ import { useMemo } from 'react'
 import {
   decodeEarnoWebRequest,
   readRequestFromLocation,
-  type EarnoWebRequestV1,
+  type EarnoWebRequest,
 } from './earnoRequest'
 import { Executor } from './Executor'
 
 function App() {
   const encoded = readRequestFromLocation()
   const decoded = useMemo<{
-    request: EarnoWebRequestV1 | null
+    request: EarnoWebRequest | null
     error: string | null
   }>(() => {
     if (!encoded) return { request: null, error: null }
@@ -27,7 +27,7 @@ function App() {
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold tracking-tight">earno</h1>
           <p className="text-sm text-zinc-400">
-            Browser executor for earno intents (wallet signing + batched calls).
+            Browser executor for earno intents (wallet signing + Relay steps).
           </p>
         </header>
 
@@ -49,12 +49,12 @@ function App() {
               Waiting for an intent
             </div>
             <div className="mt-1 text-sm text-zinc-400">
-              Run a strategy and open the returned{' '}
+              Run a command and open the returned{' '}
               <code className="text-zinc-200">executorUrl</code> (or{' '}
               <code className="text-zinc-200">portoLink</code>).
             </div>
             <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">
-              earno deposit 1.0 --receiver 0xYourAddress
+              earno send 0.01 --to 0xYourAddress
             </pre>
           </section>
         )}

@@ -25,9 +25,7 @@ export const balance = {
     EARNO_RPC: z
       .string()
       .optional()
-      .describe(
-        `RPC URL (default: ${BERACHAIN.rpc})`,
-      ),
+      .describe(`RPC URL (default: ${BERACHAIN.rpc})`),
   }),
   examples: [
     {
@@ -46,8 +44,8 @@ export const balance = {
         rpcUrl: c.options.rpc,
         env: c.env,
       })
-        chainId = resolved.chain.id
-        rpcUrl = resolved.rpcUrl
+      chainId = resolved.chain.id
+      rpcUrl = resolved.rpcUrl
     } catch (e) {
       return c.error({
         code: 'INVALID_CHAIN',
@@ -59,7 +57,7 @@ export const balance = {
     if (chainId !== BERACHAIN.id) {
       return c.error({
         code: 'UNSUPPORTED_CHAIN',
-        message: `balance is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        message: `balance is Berachain-only (chainId ${BERACHAIN.id})`,
         retryable: true,
       })
     }
@@ -119,13 +117,13 @@ export const balance = {
             shares > 0n
               ? [
                   {
-                    command: `withdraw ${formatEther(shares)} --receiver ${address}`,
+                    command: `bera withdraw ${formatEther(shares)} --receiver ${address}`,
                     description: 'Withdraw your sWBERA',
                   },
                 ]
               : [
                   {
-                    command: `deposit 1.0 --receiver ${address}`,
+                    command: `bera deposit 1.0 --receiver ${address}`,
                     description: 'Deposit BERA into sWBERA',
                   },
                 ],
@@ -134,3 +132,4 @@ export const balance = {
     )
   },
 }
+

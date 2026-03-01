@@ -47,7 +47,10 @@ export function buildDeposit(
     function: 'deposit()',
     calldata: wrapData,
     value: `${amount} ether`,
-    cast: castCmd(WBERA.address, 'deposit()', [], { value: `${amount}ether`, rpcUrl }),
+    cast: castCmd(WBERA.address, 'deposit()', [], {
+      value: `${amount}ether`,
+      rpcUrl,
+    }),
   })
 
   let step = 2
@@ -63,10 +66,12 @@ export function buildDeposit(
       to: WBERA.address,
       function: `approve(address,uint256)`,
       calldata: approveData,
-      cast: castCmd(WBERA.address, 'approve(address,uint256)', [
-        SWBERA.address,
-        weiStr,
-      ], { rpcUrl }),
+      cast: castCmd(
+        WBERA.address,
+        'approve(address,uint256)',
+        [SWBERA.address, weiStr],
+        { rpcUrl },
+      ),
     })
     step++
   }
@@ -82,10 +87,12 @@ export function buildDeposit(
     to: SWBERA.address,
     function: `deposit(uint256,address)`,
     calldata: depositData,
-    cast: castCmd(SWBERA.address, 'deposit(uint256,address)', [
-      weiStr,
-      receiver,
-    ], { rpcUrl }),
+    cast: castCmd(
+      SWBERA.address,
+      'deposit(uint256,address)',
+      [weiStr, receiver],
+      { rpcUrl },
+    ),
   })
 
   return steps
@@ -113,11 +120,12 @@ export function buildRedeem(
     to: SWBERA.address,
     function: `redeem(uint256,address,address)`,
     calldata: redeemData,
-    cast: castCmd(SWBERA.address, 'redeem(uint256,address,address)', [
-      weiStr,
-      receiver,
-      receiver,
-    ], { rpcUrl }),
+    cast: castCmd(
+      SWBERA.address,
+      'redeem(uint256,address,address)',
+      [weiStr, receiver, receiver],
+      { rpcUrl },
+    ),
   })
 
   // Step 2: Unwrap WBERA → BERA
@@ -129,10 +137,11 @@ export function buildRedeem(
     to: WBERA.address,
     function: `withdraw(uint256)`,
     calldata: '(depends on step 1 output)',
-    cast: castCmd(WBERA.address, 'withdraw(uint256)', [
-      '<WBERA_AMOUNT_FROM_STEP_1>',
-    ], { rpcUrl }),
+    cast: castCmd(WBERA.address, 'withdraw(uint256)', ['<WBERA_AMOUNT_FROM_STEP_1>'], {
+      rpcUrl,
+    }),
   })
 
   return steps
 }
+

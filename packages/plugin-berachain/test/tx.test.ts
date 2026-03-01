@@ -63,3 +63,4 @@ describe('tx encoding', () => {
     expect(steps[1]?.calldata).toBe('(depends on step 1 output)')
   })
 })
+

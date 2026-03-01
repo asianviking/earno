@@ -1,25 +1,20 @@
 import { z } from 'incur'
 import { buildRedeem } from '../tx.js'
 import { BERACHAIN, SWBERA } from '../contracts.js'
-import { buildExecutorUrl, type EarnoWebRequestV1 } from '../porto-link.js'
+import { buildExecutorUrl, type EarnoWebRequestV1 } from '@earno/core/earnoRequest'
 import { resolveCliChain } from '../chain.js'
 import { startEarnoCallbackServer } from '../callback-server.js'
 
 export const withdraw = {
-  description:
-    'Redeem sWBERA shares back to WBERA, then unwrap to native BERA',
+  description: 'Redeem sWBERA shares back to WBERA, then unwrap to native BERA',
   args: z.object({
-    shares: z
-      .string()
-      .describe('Amount of sWBERA shares to redeem (e.g. "1.0")'),
+    shares: z.string().describe('Amount of sWBERA shares to redeem (e.g. "1.0")'),
   }),
   options: z.object({
     receiver: z
       .string()
       .optional()
-      .describe(
-        'Receiver address for the withdrawn BERA (defaults to sender — fill in your address)',
-      ),
+      .describe('Receiver address for the withdrawn BERA (defaults to sender — fill in your address)'),
     chain: z
       .string()
       .optional()
@@ -66,13 +61,12 @@ export const withdraw = {
     if (receiver === '0xYOUR_ADDRESS') {
       return c.error({
         code: 'MISSING_RECEIVER',
-        message:
-          'Specify --receiver with your wallet address',
+        message: 'Specify --receiver with your wallet address',
         retryable: true,
         cta: {
           commands: [
             {
-              command: `withdraw ${shares} --receiver 0xYourWalletAddress`,
+              command: `bera withdraw ${shares} --receiver 0xYourWalletAddress`,
               description: 'Withdraw with your address',
             },
           ],
@@ -99,14 +93,21 @@ export const withdraw = {
     if (chainId !== BERACHAIN.id) {
       return c.error({
         code: 'UNSUPPORTED_CHAIN',
-        message: `withdraw is currently Berachain-only (chainId ${BERACHAIN.id})`,
+        message: `withdraw is Berachain-only (chainId ${BERACHAIN.id})`,
         retryable: true,
       })
     }
 
     const steps = buildRedeem(shares, receiver, { rpcUrl })
 
-    let callbackWait: Promise<{ txHash?: `0x${string}`; txHashes?: `0x${string}`[]; bundleId?: `0x${string}`; status?: string }> | undefined
+    let callbackWait:
+      | Promise<{
+          txHash?: `0x${string}`
+          txHashes?: `0x${string}`[]
+          bundleId?: `0x${string}`
+          status?: string
+        }>
+      | undefined
     let closeCallback: (() => Promise<void>) | undefined
     let callback: { url: string; state: string } | undefined
 
@@ -128,7 +129,7 @@ export const withdraw = {
         allowlistContracts: [SWBERA.address],
       },
       intent: {
-        plugin: 'earno',
+        plugin: '@earno/plugin-berachain',
         action: 'withdraw',
         params: { shares, receiver, chainId, rpcUrl },
         display: { strategy: 'sWBERA → BERA' },
@@ -143,9 +144,11 @@ export const withdraw = {
 
     const executorUrl = buildExecutorUrl(webUrl, req)
 
-    if (wantWait && callbackWait && closeCallback) {
+    if (wantWait && executorUrl && callbackWait && closeCallback) {
       if (!c.agent) {
-        console.error(`Open in browser:\n${executorUrl}\n\nWaiting for callback…`)
+        console.error(
+          `Open in browser:\n${executorUrl}\n\nWaiting for callback…`,
+        )
       }
 
       try {
@@ -181,7 +184,8 @@ export const withdraw = {
           },
         )
       } catch (e) {
-        const message = e instanceof Error ? e.message : 'Failed waiting for callback'
+        const message =
+          e instanceof Error ? e.message : 'Failed waiting for callback'
         return c.error({
           code: 'WAIT_FAILED',
           message,
@@ -198,7 +202,7 @@ export const withdraw = {
         strategy: 'sWBERA → BERA',
         shares: `${shares} sWBERA`,
         receiver,
-        note: 'Step 2 amount depends on the exchange rate at execution time. Run `earno balance` to check current rate.',
+        note: 'Step 2 amount depends on the exchange rate at execution time. Run `earno bera balance` to check current rate.',
         executorUrl,
         portoLink: executorUrl,
         steps: steps.map((s) => ({
@@ -213,7 +217,7 @@ export const withdraw = {
         cta: {
           commands: [
             {
-              command: `balance --address ${receiver}`,
+              command: `bera balance --address ${receiver}`,
               description: 'Check your balance',
             },
           ],

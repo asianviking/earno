@@ -1,7 +1,7 @@
 {
-  "name": "@earno/cli",
+  "name": "@earno/plugin-berachain",
   "version": "0.1.1",
-  "description": "EVM intent CLI — build + execute transaction bundles",
+  "description": "Berachain plugin for earno (sWBERA)",
   "type": "module",
   "repository": {
     "type": "git",
@@ -11,8 +11,14 @@
   "bugs": {
     "url": "https://github.com/asianviking/earno/issues"
   },
-  "bin": {
-    "earno": "./dist/cli.js"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "files": [
     "dist"
@@ -21,34 +27,19 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "node --import tsx src/cli.ts",
     "build": "tsc",
-    "prepack": "npm run build",
-    "earno": "node --import tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "keywords": [
-    "evm",
-    "intents",
-    "transactions",
-    "defi",
-    "cli"
-  ],
-  "author": "",
-  "license": "MIT",
-  "packageManager": "pnpm@10.29.2",
   "dependencies": {
     "@earno/core": "^0.1.1",
-    "@earno/plugin-berachain": "^0.1.1",
     "incur": "^0.1.7",
     "viem": "^2.46.3"
   },
   "devDependencies": {
-    "@earno/plugin-example": "^0.1.1",
     "@types/node": "^25.3.2",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }
 }
+

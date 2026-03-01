@@ -1,6 +1,8 @@
 export type {
   EarnoWebCall,
+  EarnoWebRequest,
   EarnoWebRequestV1,
+  EarnoWebRequestV2,
   EarnoWebUrlMode,
 } from '@earno/core/earnoRequest'
 

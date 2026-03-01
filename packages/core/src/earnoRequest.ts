@@ -30,6 +30,66 @@ export type EarnoWebRequestV1 = {
   }
 }
 
+export type EarnoRelayTxData = {
+  to: `0x${string}`
+  data: `0x${string}`
+  value: string
+  chainId: number
+  from?: `0x${string}`
+}
+
+export type EarnoRelaySignatureData = {
+  sign: Record<string, unknown>
+  post: {
+    endpoint: string
+    method: string
+    body?: unknown
+  }
+}
+
+export type EarnoRelayStepItem = {
+  data: EarnoRelayTxData | EarnoRelaySignatureData
+  check?: {
+    endpoint: string
+    method: string
+  }
+}
+
+export type EarnoRelayStep = {
+  id: string
+  kind: 'transaction' | 'signature'
+  action?: string
+  description?: string
+  requestId?: `0x${string}`
+  items: EarnoRelayStepItem[]
+}
+
+export type EarnoWebRequestV2 = {
+  v: 2
+  title: string
+  sender?: `0x${string}`
+  receiver?: `0x${string}`
+  relay: {
+    steps: EarnoRelayStep[]
+  }
+  rpcUrls?: Record<string, string>
+  constraints?: {
+    allowlistContracts?: `0x${string}`[]
+  }
+  intent?: {
+    plugin?: string
+    action?: string
+    params?: unknown
+    display?: Record<string, unknown>
+  }
+  callback?: {
+    url: string
+    state?: string
+  }
+}
+
+export type EarnoWebRequest = EarnoWebRequestV1 | EarnoWebRequestV2
+
 export type EarnoWebUrlMode = 'fragment' | 'query'
 
 function utf8ToBytes(input: string): Uint8Array {
@@ -132,8 +192,115 @@ function assertRequestV1(req: unknown): asserts req is EarnoWebRequestV1 {
   }
 }
 
+function assertRequestV2(req: unknown): asserts req is EarnoWebRequestV2 {
+  if (!req || typeof req !== 'object') throw new Error('Invalid request payload')
+  const r = req as Partial<EarnoWebRequestV2>
+
+  if (r.v !== 2) throw new Error('Unsupported request version')
+  if (typeof r.title !== 'string' || !r.title.trim()) throw new Error('Missing request title')
+
+  if (r.sender !== undefined && !isAddress(r.sender)) throw new Error('Invalid sender')
+  if (r.receiver !== undefined && !isAddress(r.receiver)) throw new Error('Invalid receiver')
+
+  if (!r.relay || typeof r.relay !== 'object') throw new Error('Missing relay data')
+  const relay = r.relay as Partial<EarnoWebRequestV2['relay']>
+  if (!Array.isArray(relay.steps) || relay.steps.length === 0) {
+    throw new Error('Missing relay steps')
+  }
+
+  if (r.rpcUrls !== undefined) {
+    if (!r.rpcUrls || typeof r.rpcUrls !== 'object') throw new Error('Invalid rpcUrls')
+    const urls = r.rpcUrls as Record<string, unknown>
+    for (const [key, value] of Object.entries(urls)) {
+      if (!key || !/^\d+$/.test(key)) throw new Error('Invalid rpcUrls chainId')
+      if (typeof value !== 'string' || !value) throw new Error('Invalid rpcUrls url')
+    }
+  }
+
+  if (r.constraints !== undefined) {
+    if (!r.constraints || typeof r.constraints !== 'object') {
+      throw new Error('Invalid constraints')
+    }
+    const constraints = r.constraints as Partial<
+      NonNullable<EarnoWebRequestV2['constraints']>
+    >
+    if (constraints.allowlistContracts !== undefined) {
+      if (!Array.isArray(constraints.allowlistContracts)) {
+        throw new Error('Invalid allowlistContracts')
+      }
+      for (const addr of constraints.allowlistContracts) {
+        if (!isAddress(addr)) throw new Error('Invalid allowlistContracts address')
+      }
+    }
+  }
+
+  if (r.callback !== undefined) {
+    if (!r.callback || typeof r.callback !== 'object') {
+      throw new Error('Invalid callback')
+    }
+    const cb = r.callback as Partial<NonNullable<EarnoWebRequestV2['callback']>>
+    if (typeof cb.url !== 'string' || !cb.url) throw new Error('Invalid callback url')
+    if (cb.state !== undefined && typeof cb.state !== 'string') throw new Error('Invalid callback state')
+  }
+
+  if (r.intent !== undefined) {
+    if (!r.intent || typeof r.intent !== 'object') throw new Error('Invalid intent')
+  }
+
+  for (const step of relay.steps) {
+    if (!step || typeof step !== 'object') throw new Error('Invalid relay step')
+    const s = step as Partial<EarnoRelayStep>
+
+    if (typeof s.id !== 'string' || !s.id) throw new Error('Relay step missing id')
+    if (s.kind !== 'transaction' && s.kind !== 'signature') {
+      throw new Error(`Unsupported relay step kind '${String(s.kind)}'`)
+    }
+    if (!Array.isArray(s.items) || s.items.length === 0) throw new Error('Relay step missing items')
+    if (s.requestId !== undefined && !isHex(s.requestId)) throw new Error('Invalid relay requestId')
+
+    for (const item of s.items) {
+      if (!item || typeof item !== 'object') throw new Error('Invalid relay step item')
+      const i = item as Partial<EarnoRelayStepItem>
+      if (!i.data || typeof i.data !== 'object') throw new Error('Relay step item missing data')
+
+      if (s.kind === 'transaction') {
+        const d = i.data as Partial<EarnoRelayTxData>
+        if (!isAddress(d.to)) throw new Error('Relay tx missing/invalid to')
+        if (!isHex(d.data)) throw new Error('Relay tx missing/invalid data')
+        if (typeof d.value !== 'string') throw new Error('Relay tx missing/invalid value')
+        if (typeof d.chainId !== 'number' || !Number.isFinite(d.chainId)) {
+          throw new Error('Relay tx missing/invalid chainId')
+        }
+        try {
+          if (BigInt(d.value) < 0n) throw new Error('negative')
+        } catch {
+          throw new Error('Relay tx missing/invalid value')
+        }
+      } else {
+        const d = i.data as Partial<EarnoRelaySignatureData>
+        if (!d.sign || typeof d.sign !== 'object') throw new Error('Relay signature missing/invalid sign')
+        if (!d.post || typeof d.post !== 'object') throw new Error('Relay signature missing/invalid post')
+        const post = d.post as Partial<EarnoRelaySignatureData['post']>
+        if (typeof post.endpoint !== 'string' || !post.endpoint) {
+          throw new Error('Relay signature missing/invalid post endpoint')
+        }
+        if (typeof post.method !== 'string' || !post.method) {
+          throw new Error('Relay signature missing/invalid post method')
+        }
+      }
+
+      if (i.check !== undefined) {
+        if (!i.check || typeof i.check !== 'object') throw new Error('Invalid relay step check')
+        const check = i.check as Partial<NonNullable<EarnoRelayStepItem['check']>>
+        if (typeof check.endpoint !== 'string' || !check.endpoint) throw new Error('Invalid relay check endpoint')
+        if (typeof check.method !== 'string' || !check.method) throw new Error('Invalid relay check method')
+      }
+    }
+  }
+}
+
 export function encodeEarnoWebRequest(
-  req: EarnoWebRequestV1,
+  req: EarnoWebRequest,
   opts?: { compress?: boolean },
 ): string {
   const json = JSON.stringify(req)
@@ -143,18 +310,26 @@ export function encodeEarnoWebRequest(
   return base64UrlEncode(payload)
 }
 
-export function decodeEarnoWebRequest(encoded: string): EarnoWebRequestV1 {
+export function decodeEarnoWebRequest(encoded: string): EarnoWebRequest {
   const payload = base64UrlDecode(encoded)
   const isGzip = payload.length >= 2 && payload[0] === 0x1f && payload[1] === 0x8b
   const json = bytesToUtf8(isGzip ? gunzipSync(payload) : payload)
   const parsed = JSON.parse(json) as unknown
-  assertRequestV1(parsed)
-  return parsed
+  const version = (parsed as { v?: unknown } | null | undefined)?.v
+  if (version === 1) {
+    assertRequestV1(parsed)
+    return parsed
+  }
+  if (version === 2) {
+    assertRequestV2(parsed)
+    return parsed
+  }
+  throw new Error('Unsupported request version')
 }
 
 export function buildEarnoWebUrl(
   baseUrl: string,
-  req: EarnoWebRequestV1,
+  req: EarnoWebRequest,
   opts?: { mode?: EarnoWebUrlMode; compress?: boolean },
 ): string {
   const url = new URL(baseUrl)
