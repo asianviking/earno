@@ -33,7 +33,7 @@ earno --help
 Generate a link from the CLI and sign/execute in the browser (defaults to `https://earno.sh`):
 
 ```sh
-earno send 0.01 --to 0xYourAddress --wait
+earno send 0.01 --to 0xYourAddress
 ```
 
 Override the executor base URL for a single run:

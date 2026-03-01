@@ -24,10 +24,6 @@ export type EarnoWebRequestV1 = {
     params?: unknown
     display?: Record<string, unknown>
   }
-  callback?: {
-    url: string
-    state?: string
-  }
 }
 
 export type EarnoRelayTxData = {
@@ -81,10 +77,6 @@ export type EarnoWebRequestV2 = {
     action?: string
     params?: unknown
     display?: Record<string, unknown>
-  }
-  callback?: {
-    url: string
-    state?: string
   }
 }
 
@@ -166,15 +158,6 @@ function assertRequestV1(req: unknown): asserts req is EarnoWebRequestV1 {
     }
   }
 
-  if (r.callback !== undefined) {
-    if (!r.callback || typeof r.callback !== 'object') {
-      throw new Error('Invalid callback')
-    }
-    const cb = r.callback as Partial<NonNullable<EarnoWebRequestV1['callback']>>
-    if (typeof cb.url !== 'string' || !cb.url) throw new Error('Invalid callback url')
-    if (cb.state !== undefined && typeof cb.state !== 'string') throw new Error('Invalid callback state')
-  }
-
   for (const call of r.calls) {
     if (!call || typeof call !== 'object') throw new Error('Invalid call')
     const c = call as Partial<EarnoWebCall>
@@ -232,15 +215,6 @@ function assertRequestV2(req: unknown): asserts req is EarnoWebRequestV2 {
         if (!isAddress(addr)) throw new Error('Invalid allowlistContracts address')
       }
     }
-  }
-
-  if (r.callback !== undefined) {
-    if (!r.callback || typeof r.callback !== 'object') {
-      throw new Error('Invalid callback')
-    }
-    const cb = r.callback as Partial<NonNullable<EarnoWebRequestV2['callback']>>
-    if (typeof cb.url !== 'string' || !cb.url) throw new Error('Invalid callback url')
-    if (cb.state !== undefined && typeof cb.state !== 'string') throw new Error('Invalid callback state')
   }
 
   if (r.intent !== undefined) {

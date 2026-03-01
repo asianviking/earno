@@ -35,7 +35,6 @@ Planned extensions (optional, forward compatible):
 - `intent`: `{ plugin, action, params, display }` for provenance + UX
 - `constraints`: `{ deadline, slippageBps, allowlistContracts }`
 - `execution`: `{ mode: "single"|"batch", batchHint?: "eip7702" }`
-- `callback`: `{ url, state }` to close the CLI loop (tx hash back to CLI)
 
 ## URI transport (solves “too long” links)
 
@@ -108,12 +107,11 @@ Rule:
 
 - baseline UI must still work from `{ title, calls }` only
 
-## Execution flow (closed loop)
+## Execution flow
 
 1. CLI builds request and prints an executor URL.
 2. User opens the URL, picks a wallet plugin, reviews, executes.
-3. Web returns tx hash + status.
-4. Optional callback: web redirects to `callback.url?...` to notify CLI (`--wait` mode).
+3. Web displays tx hash + status.
 
 ## Milestones / PR breakdown
 
@@ -121,5 +119,4 @@ Rule:
 2. Web wallet adapters: porto + injected, batched send + fallback, better confirmations.
 3. Chain registry + CLI `--chain` plumbing; Berachain default; display in executor.
 4. Strategy plugin interface + one example external plugin repo (dogfood).
-5. Callback loop (`--wait`) + local status display in CLI.
-6. Security hardening: allowlists, contract warnings, optional preflight simulation.
+5. Security hardening: allowlists, contract warnings, optional preflight simulation.

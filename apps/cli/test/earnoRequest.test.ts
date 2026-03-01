@@ -38,15 +38,11 @@ describe('earno web request', () => {
     expect(url).toMatch(/#r=/)
   })
 
-  it('roundtrips constraints + callback', () => {
+  it('roundtrips constraints', () => {
     const req2: EarnoWebRequestV1 = {
       ...req,
       constraints: {
         allowlistContracts: ['0x0000000000000000000000000000000000000002'],
-      },
-      callback: {
-        url: 'http://127.0.0.1:0/callback',
-        state: 'test',
       },
     }
     const encoded = encodeEarnoWebRequest(req2)
