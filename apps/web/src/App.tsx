@@ -85,7 +85,7 @@ function App() {
               </a>
               )
             </div>
-            <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">{'earno swap 0.01 --from native --to USDC --chain base --toChain base --sender 0xYourAddress'}</pre>
+            <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">{'earno swap 0.1 --from native --to USDC --chain berachain --to-chain berachain --sender 0xYourAddress'}</pre>
             <div className="mt-4 text-sm text-zinc-400">
               Using an agent? Sync earno skills:
             </div>
