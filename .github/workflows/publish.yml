@@ -95,4 +95,5 @@ jobs:
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.tag }}
           files: release-assets/*.tgz
