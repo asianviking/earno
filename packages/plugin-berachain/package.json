@@ -1,6 +1,6 @@
 {
   "name": "@earno/plugin-berachain",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Berachain plugin for earno (sWBERA)",
   "type": "module",
   "repository": {
@@ -32,7 +32,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@earno/core": "^0.1.1",
+    "@earno/core": "^0.2.0",
     "incur": "^0.1.7",
     "viem": "^2.46.3"
   },
@@ -42,4 +42,3 @@
     "vitest": "^4.0.18"
   }
 }
-

@@ -1,6 +1,6 @@
 {
   "name": "@earno/plugin-example",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Example earno strategy plugin",
   "type": "module",
   "repository": {
@@ -30,7 +30,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@earno/core": "^0.1.1",
+    "@earno/core": "^0.2.0",
     "incur": "^0.1.7",
     "viem": "^2.46.3"
   },

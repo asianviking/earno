@@ -32,13 +32,13 @@ jobs:
         run: |
           TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
-          node -e "const expected=process.argv[1]; const pkgs=['./apps/cli/package.json','./packages/core/package.json','./packages/plugin-example/package.json']; const versions=pkgs.map((p)=>({p, v: require(p).version})); const mismatch=versions.filter((x)=>x.v!==expected); if(mismatch.length){console.error('Release tag does not match package versions. Expected:', expected); for(const m of mismatch) console.error(m.p+':', m.v); process.exit(1)}" "$VERSION"
+          node -e "const expected=process.argv[1]; const pkgs=['./apps/cli/package.json','./packages/core/package.json','./packages/plugin-example/package.json','./packages/plugin-berachain/package.json']; const versions=pkgs.map((p)=>({p, v: require(p).version})); const mismatch=versions.filter((x)=>x.v!==expected); if(mismatch.length){console.error('Release tag does not match package versions. Expected:', expected); for(const m of mismatch) console.error(m.p+':', m.v); process.exit(1)}" "$VERSION"
 
       - name: Install
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter @earno/cli build
+        run: pnpm --filter @earno/core build && pnpm --filter @earno/plugin-example build && pnpm --filter @earno/plugin-berachain build && pnpm --filter @earno/cli build
 
       - name: Pack release assets
         run: |
@@ -46,6 +46,7 @@ jobs:
           mkdir -p release-assets
           pnpm -C packages/core pack --pack-destination ../../release-assets
           pnpm -C packages/plugin-example pack --pack-destination ../../release-assets
+          pnpm -C packages/plugin-berachain pack --pack-destination ../../release-assets
           pnpm -C apps/cli pack --pack-destination ../../release-assets
 
       - name: Publish
@@ -54,6 +55,7 @@ jobs:
           VERSION="${TAG#v}"
           npm publish "./release-assets/earno-core-${VERSION}.tgz" --access public
           npm publish "./release-assets/earno-plugin-example-${VERSION}.tgz" --access public
+          npm publish "./release-assets/earno-plugin-berachain-${VERSION}.tgz" --access public
           npm publish "./release-assets/earno-cli-${VERSION}.tgz" --access public
 
       - name: Upload assets to GitHub Release

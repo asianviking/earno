@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { Cli, Errors, z } from 'incur'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { balance } from './commands/balance.js'
 import { send } from './commands/send.js'
 import { swap } from './commands/swap.js'
@@ -7,6 +10,21 @@ import { pluginCli } from './plugin-cli.js'
 import { loadConfiguredPlugins } from './plugins.js'
 
 const DEFAULT_WEB_URL = 'https://earno.sh'
+
+function readCliVersion(): string | undefined {
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url))
+    const pkgPath = path.join(here, '..', 'package.json')
+    const raw = fs.readFileSync(pkgPath, 'utf8')
+    const parsed = JSON.parse(raw) as { version?: unknown }
+    if (typeof parsed.version === 'string' && parsed.version.trim()) {
+      return parsed.version
+    }
+  } catch {
+    // ignore
+  }
+  return undefined
+}
 
 function stripGlobalWebUrlFlag(argv: string[]): { argv: string[]; webUrl?: string } {
   const nextArgv: string[] = []
@@ -43,7 +61,7 @@ const { argv: argv, webUrl: webUrlFlag } = stripGlobalWebUrlFlag(argvInput)
 
 const cli = Cli.create('earno', {
   description: 'EVM intent CLI — build + execute transaction bundles',
-  version: '0.1.0',
+  version: readCliVersion() ?? '0.0.0',
   vars: z.object({
     webUrl: z.string().default(DEFAULT_WEB_URL),
   }),
