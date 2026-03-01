@@ -115,7 +115,7 @@ earno is agent-native via incur. Any AI agent can discover and use it:
 earno mcp add
 
 # Sync skill files to your agent
-earno skills add
+npx @earno/cli skills add
 
 # Print LLM-readable command manifest
 earno --llms
@@ -127,7 +127,7 @@ earno --llms
 |----------|-------------|---------|
 | `EARNO_CHAIN` | Default chain key/chainId | `ethereum` |
 | `EARNO_RPC` | RPC URL override | — |
-| `EARNO_WEB_URL` | Base URL for executor links (`executorUrl` / `portoLink`) | `https://earno.sh` |
+| `EARNO_WEB_URL` | Base URL for executor links (`executorUrl`) | `https://earno.sh` |
 | `EARNO_PLUGINS` | Comma-separated plugin import specs | — |
 | `WALLET_PRIVATE_KEY` | Used in `cast send` commands (never stored) | — |
 

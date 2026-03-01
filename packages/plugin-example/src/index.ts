@@ -131,7 +131,6 @@ const example = Cli.create('example', {
         to,
         amount: `${amount} ${chain.nativeCurrency.symbol}`,
         executorUrl,
-        portoLink: executorUrl,
         cast: `cast send ${to} --value ${amount}ether --rpc-url ${rpcUrl} --private-key $WALLET_PRIVATE_KEY`,
       },
       {

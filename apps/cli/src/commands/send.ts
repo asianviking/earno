@@ -85,7 +85,6 @@ export const send = {
         to,
         amount: `${amount} ${symbol}`,
         ...(executorUrl ? { executorUrl } : {}),
-        portoLink: executorUrl,
         cast: `cast send ${to} --value ${amount}ether --rpc-url ${rpcUrl} --private-key $WALLET_PRIVATE_KEY`,
       },
     )

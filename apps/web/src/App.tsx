@@ -70,8 +70,7 @@ function App() {
             </div>
             <div className="mt-1 text-sm text-zinc-400">
               Run a command and open the returned{' '}
-              <code className="text-zinc-200">executorUrl</code> (or{' '}
-              <code className="text-zinc-200">portoLink</code>).
+              <code className="text-zinc-200">executorUrl</code>.
             </div>
             <div className="mt-3 text-sm text-zinc-400">
               Install:{' '}
@@ -87,6 +86,12 @@ function App() {
               )
             </div>
             <pre className="mt-4 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">{'earno swap 0.01 --from native --to USDC --chain base --toChain base --sender 0xYourAddress'}</pre>
+            <div className="mt-4 text-sm text-zinc-400">
+              Using an agent? Sync earno skills:
+            </div>
+            <pre className="mt-2 overflow-x-auto rounded-md bg-zinc-950/60 p-3 text-xs text-zinc-200">
+              npx @earno/cli skills add
+            </pre>
           </section>
         )}
       </main>
