@@ -17,6 +17,5 @@ pnpm --filter earno-docs build
 Recommended: create a **separate** Vercel project for docs.
 
 - Root directory: `apps/docs`
-- Build command: `pnpm build`
-- Output directory: `dist`
+- Build/output: see `apps/docs/vercel.json` (currently `npm install` + `npm run build`, output `dist`)
 - Domain: `docs.earno.sh`
