@@ -8,7 +8,6 @@ import {
   type EarnoWebCall,
   type EarnoWebRequestV2,
 } from '../porto-link.js'
-import { startEarnoCallbackServer } from '../callback-server.js'
 
 const RELAY_BASE_URL = 'https://api.relay.link'
 const NATIVE_ADDRESS = '0x0000000000000000000000000000000000000000' as const
@@ -462,14 +461,6 @@ export const swap = {
       .number()
       .optional()
       .describe('Slippage tolerance in basis points (e.g. 50 = 0.50%)'),
-    wait: z
-      .boolean()
-      .optional()
-      .describe('Wait for the browser executor to callback with a tx hash'),
-    waitTimeoutSec: z
-      .number()
-      .optional()
-      .describe('Timeout in seconds for --wait (default: 300)'),
   }),
   env: z.object({
     EARNO_CHAIN: z.string().optional().describe('Default chain key/chainId'),
@@ -484,8 +475,6 @@ export const swap = {
     const sender = c.options.sender as string
     const recipient = (c.options.recipient ?? sender) as string
     const refundTo = (c.options.refundTo ?? sender) as string
-    const wantWait = c.options.wait ?? false
-    const waitTimeoutSec = c.options.waitTimeoutSec ?? 300
     const webUrl = c.var?.webUrl ?? 'https://earno.sh'
 
     let originChainId: number
@@ -673,24 +662,6 @@ export const swap = {
     const fromLabel = relayCurrencyLabel(fromResolved)
     const toLabel = relayCurrencyLabel(toResolved)
 
-    let callbackWait:
-      | Promise<{
-          txHash?: `0x${string}`
-          txHashes?: `0x${string}`[]
-          bundleId?: `0x${string}`
-          status?: string
-        }>
-      | undefined
-    let closeCallback: (() => Promise<void>) | undefined
-    let callback: { url: string; state: string } | undefined
-
-    if (wantWait) {
-      const server = await startEarnoCallbackServer()
-      callback = server.callback
-      callbackWait = server.waitForCallback
-      closeCallback = server.close
-    }
-
     rpcUrls[String(originChainId)] = rpcUrl
 
     const req: EarnoWebRequestV2 = {
@@ -726,72 +697,12 @@ export const swap = {
           via: 'relay',
         },
       },
-      ...(callback ? { callback } : {}),
       relay: {
         steps: relaySteps,
       },
     }
 
     const executorUrl = buildEarnoWebUrl(webUrl, req)
-
-    if (wantWait && executorUrl && callbackWait && closeCallback) {
-      if (!c.agent) {
-        console.error(`Open in browser:\n${executorUrl}\n\nWaiting for callback…`)
-      }
-
-      try {
-        const timeoutMs = Math.max(1, Number(waitTimeoutSec)) * 1000
-        const timeout = new Promise<never>((_, rej) =>
-          setTimeout(() => rej(new Error('Timed out waiting for callback')), timeoutMs),
-        )
-        const result = await Promise.race([callbackWait, timeout])
-        return c.ok(
-          {
-            originChainId,
-            destinationChainId,
-            rpcUrl,
-            sender,
-            recipient,
-            fromCurrency,
-            toCurrency,
-            fromSymbol: fromResolved.symbol ?? null,
-            toSymbol: toResolved.symbol ?? null,
-            amount,
-            amountWei,
-            relayRequestIds,
-            executorUrl,
-            portoLink: executorUrl,
-            callback: { ...callback },
-            txHash: result.txHash ?? null,
-            txHashes: result.txHashes ?? null,
-            bundleId: result.bundleId ?? null,
-            status: result.status ?? null,
-          },
-          {
-            cta: result.txHash
-              ? {
-                  commands: [
-                    {
-                      command: `cast receipt ${result.txHash} --rpc-url ${rpcUrl}`,
-                      description: 'Check tx receipt',
-                    },
-                  ],
-                }
-              : undefined,
-          },
-        )
-      } catch (e) {
-        const message = e instanceof Error ? e.message : 'Failed waiting for callback'
-        return c.error({
-          code: 'WAIT_FAILED',
-          message,
-          retryable: true,
-          details: { executorUrl },
-        })
-      } finally {
-        await closeCallback()
-      }
-    }
 
     return c.ok(
       {
