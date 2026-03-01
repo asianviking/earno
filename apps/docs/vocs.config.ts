@@ -19,7 +19,7 @@ export default defineConfig({
       text: 'Guides',
       items: [
         { text: 'CLI basics', link: '/guides/cli-basics' },
-        { text: 'Plugins', link: '/guides/plugins' },
+        { text: 'Build your own plugin', link: '/guides/plugins' },
         { text: 'Web executor', link: '/guides/web-executor' },
         { text: 'Agent integration', link: '/guides/agents' },
       ],

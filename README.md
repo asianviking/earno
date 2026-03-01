@@ -39,6 +39,63 @@ pnpm dev:web
 pnpm --filter @earno/cli dev
 ```
 
+## Quickstart Ideas
+
+Not sure where to start? Here are things you can do with earno today.
+
+### Check your portfolio across chains
+
+See native + stablecoin balances on every configured chain in one shot:
+
+```sh
+earno balance --address 0xYourAddress
+```
+
+### Swap tokens cross-chain
+
+Move USDC from Arbitrum to BERA on Berachain via Relay — no bridge UI needed:
+
+```sh
+earno swap 50 --from USDC --to BERA --chain arbitrum --to-chain berachain --sender 0xYourAddress
+```
+
+### Earn yield on Berachain (sWBERA)
+
+Deposit idle BERA into the sWBERA vault for auto-compounding yield (requires Berachain plugin):
+
+```sh
+earno bera deposit 10 --receiver 0xYourAddress
+```
+
+Then check your position anytime:
+
+```sh
+earno bera balance --address 0xYourAddress
+# → sWBERA shares, underlying BERA value, exchange rate, vault TVL
+```
+
+### Claim BGT rewards
+
+Claim pending Berachain governance token rewards and optionally redeem to BERA (requires Berachain plugin):
+
+```sh
+earno bera claim
+```
+
+### Build your own strategy
+
+Write a plugin to add your own commands. See the [plugin development guide](https://docs.earno.sh/guides/plugins) for a full walkthrough, or jump straight to the source:
+
+- [Plugin example](./packages/plugin-example/src/index.ts) — minimal single-command plugin
+- [Berachain plugin](./packages/plugin-berachain/src/) — real multi-command plugin with on-chain reads
+
+```sh
+earno plugin add ./my-strategy
+earno my-strategy deposit 100
+```
+
+---
+
 ## Quickstart (web executor)
 
 Generate a link from the CLI and sign/execute in the browser (defaults to `https://earno.sh`):

@@ -18,5 +18,5 @@ Recommended: create a **separate** Vercel project for docs.
 
 - Root directory: `apps/docs`
 - Build command: `pnpm build`
-- Output directory: `dist`
+- Output directory: `docs/dist`
 - Domain: `docs.earno.sh`
