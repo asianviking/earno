@@ -15,6 +15,7 @@ earno plugin add @earno/plugin-berachain
 ```sh
 earno bera deposit --help
 earno bera balance --help
+earno bera vaults --help
 earno bera withdraw --help
 earno bera withdraw-claim --help
 earno bera claim --help
@@ -87,4 +88,18 @@ Claim and redeem BGT → BERA:
 
 ```sh
 earno bera claim --sender 0xYourAddress --redeem --receiver 0xYourAddress
+```
+
+### Reward Vaults
+
+List top Reward Vaults (API; whitelisted by default):
+
+```sh
+earno bera vaults --first 20 --orderBy apr
+```
+
+Filter by category:
+
+```sh
+earno bera vaults --category defi/amm --first 20
 ```
