@@ -1,6 +1,7 @@
 import { Cli } from 'incur'
 import { deposit } from './commands/deposit.js'
 import { balance } from './commands/balance.js'
+import { vaults } from './commands/vaults.js'
 import { withdraw } from './commands/withdraw.js'
 import { withdrawClaim } from './commands/withdraw-claim.js'
 import { claim } from './commands/claim.js'
@@ -10,6 +11,7 @@ const bera = Cli.create('bera', {
 })
   .command('deposit', deposit)
   .command('balance', balance)
+  .command('vaults', vaults)
   .command('withdraw', withdraw)
   .command('withdraw-claim', withdrawClaim)
   .command('claim', claim)
