@@ -3,3 +3,5 @@ dist/
 .env
 *.tgz
 .vercel
+.worktrees/
+apps/docs/dist-test/

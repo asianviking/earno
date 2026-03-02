@@ -1,0 +1,44 @@
+{
+  "name": "@earno/plugin-usdt0",
+  "version": "0.2.1",
+  "description": "USDT0 cross-chain transfers via LayerZero OFT (zero slippage)",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asianviking/earno.git"
+  },
+  "homepage": "https://github.com/asianviking/earno#readme",
+  "bugs": {
+    "url": "https://github.com/asianviking/earno/issues"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@earno/core": "^0.2.1",
+    "incur": "^0.1.7",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
